@@ -23,7 +23,7 @@ Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run
 - Season values live in config (`Season:SurveyYear`, `Season:TextYear`).
 - One top-level question per page (a grid counts as one); honor stored `quesperpage` on restart for surveys started by the old app.
 - Fix "Other" detection (starts-with, not exact match). Group surveys: `surveys.GroupSurvey = 1` → ask respondent count first (`UpdateK2GrpCnt`), each integer answer ≤ `k2grpcnt` server-side; the old 6/55/110/471 exact-sum check is deprecated (see db/README.md). English + Spanish via resource files. WCAG 2.2 AA, mobile-first, branding tokens per handoff §3.
-- Component library: **[OPEN]** Bob is confirming what the team uses. Until then plain Blazor + CSS tokens, no third-party UI library.
+- UI – **[DECIDED 2026-10-08]**: Agile-Ed team uses Blazor Server + Telerik UI for Blazor + Bootstrap. SurveyTaker uses **Bootstrap + plain HTML form controls**, Project Tomorrow tokens layered on Bootstrap variables, **no Telerik** (survey inputs don't need it; most Telerik Blazor components require interactivity). Stays **static SSR**, not Server mode (phones on flaky networks; stateless rule). Server mode + Telerik are fine for the later admin site.
 
 ## Working with Bob
 
