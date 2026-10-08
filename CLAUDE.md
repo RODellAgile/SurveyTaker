@@ -27,6 +27,12 @@ Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run
 - Fix "Other" detection (starts-with, not exact match). Group surveys: `surveys.GroupSurvey = 1` → ask respondent count first (`UpdateK2GrpCnt`), each integer answer ≤ `k2grpcnt` server-side; the old 6/55/110/471 exact-sum check is deprecated (see db/README.md). English + Spanish via resource files. WCAG 2.2 AA, mobile-first, branding tokens per handoff §3.
 - UI – **[DECIDED 2026-10-08]**: Agile-Ed team uses Blazor Server + Telerik UI for Blazor + Bootstrap. SurveyTaker uses **Bootstrap + plain HTML form controls**, Project Tomorrow tokens layered on Bootstrap variables, **no Telerik** (survey inputs don't need it; most Telerik Blazor components require interactivity). Stays **static SSR**, not Server mode (phones on flaky networks; stateless rule). Server mode + Telerik are fine for the later admin site.
 
+## Status (2026-10-08, evening)
+
+- Working: /S/ start → intro → group count → one question per page (7 active types, Other fix, Back/resume, real progress) → completion. 29 tests pass. Full click-through on local survey 578 (TSI) passed.
+- Next: test a group survey (e.g. 174) and a Spanish survey (STUSPAN/FAMSPAN); /D/ district links with the school picker (GetInstInDistrict; Institution DB is restored); accessibility and mobile pass; old-vs-new row comparison; IIS deploy and URL Rewrite to Speakup2026.
+- Security work on the legacy site lives in the speakup2026 repo, not here.
+
 ## Working with Bob
 
 CTO, returning to hands-on .NET after a few years; explain new .NET Core concepts when they come up. Prefers plain-text questions over multiple-choice, light backgrounds, click-by-click UI steps where practical, minimal wasted effort (hard October date). Don't ask him for passwords in chat.
