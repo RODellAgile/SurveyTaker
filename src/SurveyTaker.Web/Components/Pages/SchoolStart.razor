@@ -1,0 +1,143 @@
+@page "/S/{LinkCode}"
+@page "/S/{LinkCode}/{SurveyIdText}"
+@using System.Text.RegularExpressions
+@inject SpeakupDb Speakup
+@inject SurveyBankDb SurveyBank
+@inject OpenCheck Open
+@inject SurveyLinks Links
+@inject SurveyLog Log
+@inject NavigationManager Nav
+@inject IOptions<SeasonOptions> Season
+@inject IOptions<SurveyOptions> Options
+
+@* School short link: /S/{school link code}/{survey id}. Replaces legacy S.aspx + SchoolStart.aspx. *@
+
+@if (_problemTitle is not null)
+{
+    <Notice Title="@_problemTitle"><p>@((MarkupString)(_problemText ?? ""))</p></Notice>
+}
+else if (_school is not null && _survey is not null)
+{
+    <PageTitle>@_survey.Name</PageTitle>
+    <div lang="@(_es ? "es" : "en")">
+        <h1 class="h3 mb-3">@_survey.Name</h1>
+        <p>@T("ConfirmPrompt")</p>
+        <dl class="intro-text row mb-4 mx-0">
+            <dt class="col-sm-3">@T("District")</dt><dd class="col-sm-9">@_district?.OrgName</dd>
+            <dt class="col-sm-3">@T("School")</dt><dd class="col-sm-9">@_school.RegistrantName</dd>
+            <dt class="col-sm-3">@T("Survey")</dt><dd class="col-sm-9 mb-0">@_survey.Name</dd>
+        </dl>
+        <form method="post" @formname="start" @onsubmit="StartAsync">
+            <AntiforgeryToken />
+            <button type="submit" class="btn btn-primary btn-lg">@T("Start")</button>
+        </form>
+        <p class="mt-3 text-body-secondary small">@T("NotRight")</p>
+    </div>
+    <SiteFooter Full="true" />
+}
+
+@code {
+    [Parameter] public string LinkCode { get; set; } = "";
+    [Parameter] public string? SurveyIdText { get; set; }
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    private SchoolRegistration? _school;
+    private OrganizationInfo? _district;
+    private ActiveSurvey? _survey;
+    private string? _problemTitle, _problemText;
+    private bool _es;
+    private string T(string id) => Texts.Get(id, _es);
+
+    private static readonly Regex CodePattern = new("^[A-Za-z0-9]{1,10}$");
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Runs for both GET and the Start POST: everything is re-checked from the database (stateless).
+        if (string.IsNullOrEmpty(SurveyIdText))
+        {
+            // Survey selection lists are not migrated yet: hand off to the legacy site.
+            Nav.NavigateTo($"{Options.Value.LegacyBaseUrl.TrimEnd('/')}/S/{Uri.EscapeDataString(LinkCode)}");
+            return;
+        }
+
+        var site = await Open.SiteAsync();
+        if (!site.IsOpen) { ShowClosed(site); return; }
+
+        if (!CodePattern.IsMatch(LinkCode) || (_school = await Speakup.GetRegistrationByLinkCodeAsync(LinkCode)) is null)
+        {
+            await Log.Error("SchoolStart", "ValidateSch", "LinkCode", LinkCode, "School link code not found");
+            Problem("We couldn't find that school", "Please check the link you were given. Questions? <a href=\"mailto:speakup@tomorrow.org\">Contact the Speak Up team</a>.");
+            return;
+        }
+
+        if (_school.OrganizationId is int orgId && orgId != 0)
+        {
+            _district = await Speakup.GetOrganizationByIdAsync(orgId);
+            var district = await Open.DistrictAsync(orgId);
+            if (!district.IsOpen) { ShowClosed(district); return; }
+        }
+
+        if (!int.TryParse(SurveyIdText, out var surveyId) || (_survey = await SurveyBank.ChkSurveyIdAsync(surveyId)) is null)
+        {
+            await Log.Error("SchoolStart", "ValidateSurveyId", "SurveyId", SurveyIdText, $"Survey not found or not active (link code {LinkCode})");
+            Problem("This survey isn't available", "The survey in this link is not active. Please check the link you were given.");
+            return;
+        }
+        _es = Texts.IsSpanish(_survey.SurveyType);
+
+        if (!HttpMethods.IsPost(HttpContext.Request.Method))
+            await LogEntryPoint(surveyId);
+    }
+
+    private async Task StartAsync()
+    {
+        if (_school is null || _survey is null || !int.TryParse(SurveyIdText, out var surveyId))
+            return;
+
+        var desc = await SurveyBank.GetSurveyDescAsync(surveyId);
+        var tsi = await Speakup.StartNewSurveyAsync(new NewSurvey(
+            SurveyId: surveyId,
+            OrganizationId: _school.OrganizationId ?? 0,
+            RegistrationId: _school.RegistrationId,
+            SurveyName: desc?.Name ?? _survey.Name ?? "",
+            SurveyTitle: Season.Value.SurveyTitle,
+            SurveyType: desc?.SurveyType ?? _survey.SurveyType ?? "",
+            QuesPerPage: Options.Value.QuesPerPage,
+            Ip: HttpContext.Connection.RemoteIpAddress?.ToString() ?? ""));
+
+        await Log.Info("SchoolStart", "StartSurvey", "orgId/regId/surveyId",
+            $"{_school.OrganizationId}/{_school.RegistrationId}/{surveyId}", $"TSI {tsi}");
+
+        HttpContext.Response.Cookies.Append("ProjectTomorrowSurvey", tsi.ToString(), new CookieOptions
+        {
+            Expires = DateTimeOffset.UtcNow.AddHours(3), HttpOnly = true, Secure = true, SameSite = SameSiteMode.Lax,
+        });
+        Nav.NavigateTo(Links.Url("intro", tsi));
+    }
+
+    private async Task LogEntryPoint(int surveyId)
+    {
+        try { await Speakup.LogEntryPointAsync("SCHOOLSTART", regLinkCode: LinkCode, surveyId: surveyId); }
+        catch (Exception ex) { await Log.Error("SchoolStart", "LogEntryPoint", "LinkCode", LinkCode, ex.Message); }
+    }
+
+    private void ShowClosed(OpenResult r)
+    {
+        switch (r.Status)
+        {
+            case OpenStatus.Maintenance:
+                Problem("Speak Up is down for maintenance",
+                    $"Please try again after {r.AvailableAt:MMMM d, yyyy h:mm tt}. Thank you for your patience.");
+                break;
+            case OpenStatus.SeasonClosed:
+                Problem("Speak Up is closed", "Survey taking is not open at this time. Thank you for your interest in Speak Up.");
+                break;
+            default:
+                Problem("Survey taking is closed for your district",
+                    r.Message + " Questions? <a href=\"mailto:speakup@tomorrow.org\">Contact the Speak Up team</a>.");
+                break;
+        }
+    }
+
+    private void Problem(string title, string html) { _problemTitle = title; _problemText = html; }
+}

@@ -1,0 +1,30 @@
+@inject IOptions<SurveyOptions> Options
+
+@* Full footer on long pages (intro, completion); abbreviated on question pages. Sponsors come from config. *@
+<footer class="site-footer @(Full ? "full" : "short")">
+    @if (Full && Options.Value.Sponsors.Count > 0)
+    {
+        <p class="sponsor-heading">Speak Up is made possible by</p>
+        <ul class="sponsor-list">
+            @foreach (var s in Options.Value.Sponsors)
+            {
+                <li class="sponsor">
+                    @if (!string.IsNullOrEmpty(s.LogoUrl))
+                    {
+                        <img src="@s.LogoUrl" alt="@s.Name" />
+                    }
+                    else
+                    {
+                        <span class="sponsor-placeholder">@s.Name</span>
+                    }
+                </li>
+            }
+        </ul>
+    }
+    <p class="copyright">&copy; Project Tomorrow @DateTime.Now.Year &middot;
+        <a href="https://tomorrow.org" target="_blank" rel="noopener">tomorrow.org</a></p>
+</footer>
+
+@code {
+    [Parameter] public bool Full { get; set; }
+}

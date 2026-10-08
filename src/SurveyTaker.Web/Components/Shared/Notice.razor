@@ -1,0 +1,14 @@
+@* A simple message page body: closed, maintenance, bad link, already completed. *@
+<PageTitle>@Title</PageTitle>
+<div class="card notice">
+    <div class="card-body">
+        <h1 class="h4">@Title</h1>
+        @ChildContent
+    </div>
+</div>
+<SiteFooter Full="false" />
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

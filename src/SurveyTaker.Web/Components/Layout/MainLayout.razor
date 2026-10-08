@@ -1,3 +1,20 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@inject IOptions<SeasonOptions> Season
 
-@Body
+<a class="visually-hidden-focusable skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+    <div class="container-narrow d-flex align-items-center gap-2">
+        <span class="brand">Project Tomorrow</span>
+        <span class="brand-sep" aria-hidden="true">|</span>
+        <span class="brand-title">@Season.Value.SurveyTitle</span>
+    </div>
+    <div class="color-band" aria-hidden="true">
+        <span style="background:#9CB43C"></span><span style="background:#6CA8CC"></span><span style="background:#D8846C"></span>
+        <span style="background:#CC3024"></span><span style="background:#F0B420"></span><span style="background:#005090"></span>
+    </div>
+</header>
+
+<main id="main" class="container-narrow py-4">
+    @Body
+</main>

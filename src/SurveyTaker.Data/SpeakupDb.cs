@@ -98,7 +98,8 @@ public sealed class SpeakupDb(SqlConnections connections)
             UserAgent = Ansi(e.UserAgent, 200),
             ValueName = Ansi(e.ValueName, 50),
             Value = Ansi(e.Value, 100),
-            EntryText = new DbString { Value = e.EntryText, IsAnsi = true, Length = -1 },
+            // SpeakupLog.EntryText is NOT NULL.
+            EntryText = new DbString { Value = e.EntryText ?? "", IsAnsi = true, Length = -1 },
         }, ct));
     }
 

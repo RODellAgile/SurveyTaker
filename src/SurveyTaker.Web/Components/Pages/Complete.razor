@@ -1,0 +1,27 @@
+@page "/complete"
+@inherits SurveyPageBase
+
+@* Deliberately simple (Bob, 2026-10-08): thank you, Project Tomorrow, link to tomorrow.org in a new tab. *@
+
+<PageTitle>@T("ThankYou")</PageTitle>
+<div class="notice text-center" lang="@(Es ? "es" : "en")">
+    <div class="card"><div class="card-body py-5">
+        <p class="brand fs-4 mb-3">Project Tomorrow</p>
+        <h1 class="h3">@T("ThankYou")</h1>
+        <p class="mb-4">@T("ThankYouBody")</p>
+        <a class="btn btn-primary" href="https://tomorrow.org" target="_blank" rel="noopener">@T("VisitUs")</a>
+    </div></div>
+</div>
+<SiteFooter Full="true" />
+
+@code {
+    protected override string LogPage => "Complete";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load only for language; a bad or missing link still gets the thank-you page.
+        if (await LoadSurveyAsync(allowCompleted: true))
+            await Log.Info(LogPage, "Show", "TSI", Ctx!.TakenSurveyId.ToString());
+        HttpContext.Response.Cookies.Delete("ProjectTomorrowSurvey");
+    }
+}

@@ -1,0 +1,41 @@
+@page "/intro"
+@inherits SurveyPageBase
+
+@if (Problem is not null)
+{
+    <Notice Title="Speak Up"><p>@Problem</p></Notice>
+}
+else if (Ctx is not null)
+{
+    <PageTitle>@Ctx.Survey.Title</PageTitle>
+    <div lang="@(Es ? "es" : "en")">
+        <h1 class="h3 mb-1">@Ctx.Survey.Title</h1>
+        <p class="text-body-secondary mb-4">@Ctx.Survey.Name</p>
+
+        @if (!string.IsNullOrWhiteSpace(Ctx.Survey.Intro))
+        {
+            @* Intro text is staff-authored HTML from SurveyBank (rendered as HTML in the legacy app too). *@
+            <div class="intro-text mb-3">@((MarkupString)Ctx.Survey.Intro)</div>
+        }
+        <p>@string.Format(T("QuestionCount"), Ctx.Survey.TotalQuestions ?? Ctx.TotalQuestionRows)</p>
+
+        <form method="post" @formname="intro" @onsubmit="NextAsync">
+            <AntiforgeryToken />
+            <button type="submit" class="btn btn-primary btn-lg">@T("Continue")</button>
+        </form>
+    </div>
+    <SiteFooter Full="true" />
+}
+
+@code {
+    protected override string LogPage => "Intro";
+
+    protected override async Task OnInitializedAsync() => await LoadSurveyAsync();
+
+    private Task NextAsync()
+    {
+        if (Ctx is not null)
+            Go(Ctx.IsGroup ? "group" : "questions");
+        return Task.CompletedTask;
+    }
+}

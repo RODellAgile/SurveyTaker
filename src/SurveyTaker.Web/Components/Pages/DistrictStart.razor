@@ -1,0 +1,18 @@
+@page "/D/{LinkCode}"
+@page "/D/{LinkCode}/{SurveyIdText}"
+@inject NavigationManager Nav
+@inject IOptions<SurveyOptions> Options
+
+@* District links need the school picker (GetInstInDistrict), which isn't built yet. Until it is,
+   send them to the legacy site unchanged. *@
+
+@code {
+    [Parameter] public string LinkCode { get; set; } = "";
+    [Parameter] public string? SurveyIdText { get; set; }
+
+    protected override void OnInitialized()
+    {
+        var path = "/D/" + Uri.EscapeDataString(LinkCode) + (SurveyIdText is null ? "" : "/" + Uri.EscapeDataString(SurveyIdText));
+        Nav.NavigateTo(Options.Value.LegacyBaseUrl.TrimEnd('/') + path);
+    }
+}

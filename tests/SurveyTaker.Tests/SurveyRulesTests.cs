@@ -75,4 +75,16 @@ public class LoggingAndProgressTests
         Assert.Equal(200, ua.Length);
         await Dapper.SqlMapper.ExecuteAsync(cn, "DELETE FROM SpeakupLog WHERE Page_File = @marker", new { marker });
     }
+
+    [Fact]
+    public async Task LogEntryEnhanced_AcceptsEntryWithNoText()
+    {
+        // SpeakupLog.EntryText is NOT NULL; found when the completion page's log row was silently dropped.
+        var marker = "ST.Test." + Guid.NewGuid().ToString("N")[..12];
+        await new SpeakupDb(LocalDb.Connections).LogEntryEnhancedAsync(new LogEntry(marker, "Test", "LOG"));
+
+        await using var cn = new Microsoft.Data.SqlClient.SqlConnection(LocalDb.Options.Speakup);
+        Assert.Equal(1, await Dapper.SqlMapper.ExecuteScalarAsync<int>(cn, "SELECT COUNT(*) FROM SpeakupLog WHERE Page_File = @marker", new { marker }));
+        await Dapper.SqlMapper.ExecuteAsync(cn, "DELETE FROM SpeakupLog WHERE Page_File = @marker", new { marker });
+    }
 }

@@ -1,0 +1,59 @@
+@page "/group"
+@inherits SurveyPageBase
+@inject SpeakupDb Speakup
+
+@* Group surveys only: how many respondents are taking it together. Saved to users_surveys.k2grpcnt. *@
+
+@if (Problem is not null)
+{
+    <Notice Title="Speak Up"><p>@Problem</p></Notice>
+}
+else if (Ctx is not null)
+{
+    <PageTitle>@Ctx.Survey.Title</PageTitle>
+    <div lang="@(Es ? "es" : "en")">
+        <h1 class="h3 mb-4">@Ctx.Survey.Title</h1>
+        <form method="post" @formname="group" @onsubmit="SaveAsync" class="question @(_error is null ? "" : "has-error")">
+            <AntiforgeryToken />
+            <label for="count" class="q-text d-block">@T("GroupPrompt")</label>
+            @if (_error is not null)
+            {
+                <p class="error-text" id="count-error">@_error</p>
+            }
+            <input id="count" name="Count" type="number" inputmode="numeric" min="2" max="999" step="1" required
+                   class="form-control w-auto" value="@(_posted ?? Ctx.GroupCount?.ToString())"
+                   aria-describedby="count-help @(_error is null ? "" : "count-error")" />
+            <p id="count-help" class="form-text">@T("GroupHelp")</p>
+            <button type="submit" class="btn btn-primary">@T("Next")</button>
+        </form>
+    </div>
+    <SiteFooter Full="false" />
+}
+
+@code {
+    protected override string LogPage => "Group";
+
+    [SupplyParameterFromForm(FormName = "group")] private string? Count { get; set; }
+
+    private string? _error;
+    private string? _posted;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await LoadSurveyAsync() && !Ctx!.IsGroup)
+            Go("questions");
+    }
+
+    private async Task SaveAsync()
+    {
+        if (Ctx is null) return;
+        _posted = Count;
+        if (!int.TryParse(Count?.Trim(), out var n) || n < 2 || n > 999)
+        {
+            _error = T("GroupInvalid");
+            return;
+        }
+        await Speakup.UpdateK2GrpCntAsync(Ctx.TakenSurveyId, n);
+        Go("questions");
+    }
+}

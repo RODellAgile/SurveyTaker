@@ -1,0 +1,283 @@
+@page "/questions"
+@inherits SurveyPageBase
+@inject SpeakupDb Speakup
+
+@if (Problem is not null)
+{
+    <Notice Title="Speak Up"><p>@Problem</p></Notice>
+}
+else if (Ctx is not null)
+{
+    <PageTitle>@Ctx.Survey.Title – @string.Format(T("PageOf"), _page, Ctx.TotalPages)</PageTitle>
+    <div lang="@(Es ? "es" : "en")">
+        <div class="mb-3">
+            <p class="progress-text mb-1">@string.Format(T("PageOf"), _page, Ctx.TotalPages)</p>
+            <div class="progress" role="progressbar" aria-label="@string.Format(T("PageOf"), _page, Ctx.TotalPages)"
+                 aria-valuenow="@_page" aria-valuemin="1" aria-valuemax="@Ctx.TotalPages">
+                <div class="progress-bar" style="width:@(100 * (_page - 1) / Math.Max(1, Ctx.TotalPages))%"></div>
+            </div>
+        </div>
+
+        @if (_errors.Count > 0)
+        {
+            <div class="alert alert-danger" role="alert">@T("FixErrors")</div>
+        }
+
+        <form method="post" @formname="page" @onsubmit="SubmitAsync">
+            <AntiforgeryToken />
+            <input type="hidden" name="Page" value="@_page" />
+
+            @foreach (var item in _items)
+            {
+                @RenderItem(item)
+            }
+
+            <div class="nav-buttons">
+                @if (_page > 1 || Ctx.IsGroup)
+                {
+                    <button type="submit" name="Action" value="back" class="btn btn-outline-secondary" formnovalidate>@T("Back")</button>
+                }
+                else
+                {
+                    <span></span>
+                }
+                <button type="submit" name="Action" value="next" class="btn btn-primary">
+                    @(_page >= Ctx.TotalPages ? T("Finish") : T("Next"))
+                </button>
+            </div>
+        </form>
+    </div>
+    <SiteFooter Full="false" />
+}
+
+@code {
+    protected override string LogPage => "Questions";
+
+    private int _page;
+    private IReadOnlyList<PageItem> _items = [];
+    private ILookup<int, Answer> _values = Array.Empty<Answer>().ToLookup(a => a.QuestionId);
+    private Dictionary<int, string> _errors = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await LoadSurveyAsync())
+            return;
+        if (Ctx!.IsGroup && Ctx.GroupCount is null)
+        {
+            Go("group");
+            return;
+        }
+        if (Ctx.TotalPages == 0)
+        {
+            await Log.Error(LogPage, "Load", "SurveyId", Ctx.Taken.SurveyId?.ToString(), "Survey has no active questions");
+            Fail(Texts.Get("LinkProblem", false));
+            return;
+        }
+
+        _page = Ctx.CurrentPage;
+        if (!HttpMethods.IsPost(HttpContext.Request.Method))
+        {
+            _items = Ctx.ItemsOnPage(_page);
+            _values = (await Speakup.RetrievePartialSurveyAsync(Ctx.TakenSurveyId)).ToLookup(a => a.QuestionId);
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (Ctx is null) return;
+        var form = await HttpContext.Request.ReadFormAsync();
+        var back = form["Action"] == "back";
+
+        // Save the page the respondent was looking at (it may differ from the stored page after browser Back).
+        _page = int.TryParse(form["Page"], out var p) ? Math.Clamp(p, 1, Ctx.TotalPages) : Ctx.CurrentPage;
+        _items = Ctx.ItemsOnPage(_page);
+
+        var result = AnswerForm.Read(Ctx, _items, name => form[name].ToArray()!, enforceRequired: !back);
+        if (result.Errors.Count > 0)
+        {
+            // Re-show the page with what they entered and the messages; nothing is saved.
+            _errors = result.Errors;
+            _values = result.Answers.ToLookup(a => a.QuestionId);
+            return;
+        }
+
+        var tsi = Ctx.TakenSurveyId;
+        var questionIds = _items.SelectMany(i => i.Rows).Select(q => q.QuestionId).ToList();
+        await Speakup.SaveQuestionAnswersAsync(tsi, questionIds, result.Answers);
+
+        if (back)
+        {
+            if (_page == 1)
+            {
+                Go(Ctx.IsGroup ? "group" : "questions");
+                return;
+            }
+            await MoveTo(_page - 1);
+            return;
+        }
+
+        if (_page >= Ctx.TotalPages)
+        {
+            await Speakup.MarkSurveyCompletedAsync(tsi, Ctx.TotalQuestionRows);
+            await Log.Info(LogPage, "Complete", "TSI", tsi.ToString(), $"Survey {Ctx.Taken.SurveyId} completed");
+            Go("complete");
+            return;
+        }
+        await MoveTo(_page + 1);
+    }
+
+    private async Task MoveTo(int page)
+    {
+        var done = SurveyRules.QuestionsBeforePage(Ctx!.Pages, page);
+        await Speakup.UpdateSurveyProgressAsync(Ctx.TakenSurveyId, quesOffset: done, page: page, quesCompleted: done);
+        Go("questions");
+    }
+
+    // ---- rendering helpers ----------------------------------------------------------------------------
+
+    private bool IsChecked(int qid, int oid) => _values[qid].Any(a => a.OptionId == oid);
+    private string? ValueOf(int qid, int? oid) => _values[qid].FirstOrDefault(a => a.OptionId == oid)?.OptionValue;
+    private string? Error(int qid) => _errors.GetValueOrDefault(qid);
+
+    private RenderFragment RenderItem(PageItem item) => item.IsGrid ? RenderGrid(item) : RenderSingle(item.First);
+
+    private RenderFragment RenderSingle(SurveyQuestion q) => __builder =>
+    {
+        var qid = q.QuestionId;
+        var type = (q.QuestionType ?? "").Trim().ToLowerInvariant();
+        var options = Ctx!.OptionsFor(qid).ToList();
+        var error = Error(qid);
+        var errId = $"err{qid}";
+        var otherId = type is "radioother" or "checkboxother" ? SurveyRules.FindOtherOptionId(options) : null;
+
+        switch (type)
+        {
+            case "radio" or "radioother" or "likert" or "checkbox" or "checkboxother":
+            {
+                var inputType = type.StartsWith("checkbox") ? "checkbox" : "radio";
+                <fieldset class="question @(error is null ? "" : "has-error")" aria-describedby="@(error is null ? null : errId)">
+                    <legend>@((MarkupString)(q.QuestionText ?? ""))@Req(q)</legend>
+                    @if (error is not null) { <p class="error-text" id="@errId">@error</p> }
+                    @foreach (var o in options)
+                    {
+                        var id = $"q{qid}_{o.OptionId}";
+                        <label class="choice" for="@id">
+                            <input class="form-check-input" type="@inputType" id="@id" name="@AnswerForm.Select(qid)"
+                                   value="@o.OptionId" checked="@IsChecked(qid, o.OptionId)" />
+                            @((MarkupString)(o.OptionText ?? ""))
+                        </label>
+                        @if (o.OptionId == otherId)
+                        {
+                            <input type="text" class="form-control mb-2" name="@AnswerForm.Other(qid)" maxlength="2000"
+                                   aria-label="@T("Other")" placeholder="@T("Other")" value="@ValueOf(qid, o.OptionId)" />
+                        }
+                    }
+                </fieldset>
+                break;
+            }
+            case "text":
+            {
+                var id = $"t{qid}";
+                <div class="question @(error is null ? "" : "has-error")">
+                    <label for="@id" class="q-text d-block">@((MarkupString)(q.QuestionText ?? ""))@Req(q)</label>
+                    @if (error is not null) { <p class="error-text" id="@errId">@error</p> }
+                    <textarea id="@id" name="@AnswerForm.Text(qid)" class="form-control" rows="4" maxlength="4000"
+                              aria-describedby="@(error is null ? null : errId)">@ValueOf(qid, null)</textarea>
+                </div>
+                break;
+            }
+            case "integer":
+            {
+                <fieldset class="question @(error is null ? "" : "has-error")" aria-describedby="@(error is null ? null : errId)">
+                    <legend>@((MarkupString)(q.QuestionText ?? ""))@Req(q)</legend>
+                    @if (error is not null) { <p class="error-text" id="@errId">@error</p> }
+                    @foreach (var o in options)
+                    {
+                        var id = $"i{qid}_{o.OptionId}";
+                        <div class="row g-2 align-items-center mb-2">
+                            <label class="col-8 col-sm-9" for="@id">@((MarkupString)(o.OptionText ?? ""))</label>
+                            <div class="col-4 col-sm-3">
+                                <input id="@id" name="@AnswerForm.Integer(qid, o.OptionId)" type="number" inputmode="numeric"
+                                       min="0" max="@Ctx.GroupCount" step="1" class="form-control" value="@ValueOf(qid, o.OptionId)" />
+                            </div>
+                        </div>
+                    }
+                </fieldset>
+                break;
+            }
+            case "dropdownlist":
+            {
+                var id = $"d{qid}";
+                var selected = _values[qid].FirstOrDefault()?.OptionId;
+                <div class="question @(error is null ? "" : "has-error")">
+                    <label for="@id" class="q-text d-block">@((MarkupString)(q.QuestionText ?? ""))@Req(q)</label>
+                    @if (error is not null) { <p class="error-text" id="@errId">@error</p> }
+                    <select id="@id" name="@AnswerForm.Dropdown(qid)" class="form-select">
+                        <option value="">@T("SelectOne")</option>
+                        @foreach (var o in options)
+                        {
+                            <option value="@o.OptionId" selected="@(o.OptionId == selected)">@o.OptionText</option>
+                        }
+                    </select>
+                </div>
+                break;
+            }
+            default:
+                // verticalgrid / unknown: no active questions use these.
+                break;
+        }
+    };
+
+    private RenderFragment RenderGrid(PageItem item) => __builder =>
+    {
+        var columns = Ctx!.OptionsFor(item.First.QuestionId).ToList();
+        var anyError = item.Rows.Select(r => Error(r.QuestionId)).FirstOrDefault(e => e is not null);
+        var heading = string.IsNullOrWhiteSpace(item.First.QuestionGridHeader) ? null : item.First.QuestionGridHeader;
+        <fieldset class="question @(anyError is null ? "" : "has-error")">
+            @if (heading is not null) { <legend>@((MarkupString)heading)</legend> }
+            @if (anyError is not null) { <p class="error-text">@anyError</p> }
+            <table class="grid-table">
+                <thead>
+                    <tr>
+                        <td></td>
+                        @foreach (var c in columns) { <th scope="col">@((MarkupString)(c.OptionText ?? ""))</th> }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in item.Rows)
+                    {
+                        var rowText = row.QuestionText ?? "";
+                        var inputType = item.Type == "grid" || AnswerForm.IsCheckGrid(row) ? "checkbox" : "radio";
+                        <tr>
+                            <th scope="row">@((MarkupString)rowText)@Req(row)</th>
+                            @foreach (var o in Ctx.OptionsFor(row.QuestionId))
+                            {
+                                var id = $"q{row.QuestionId}_{o.OptionId}";
+                                <td class="cell">
+                                    <label for="@id">
+                                        <input class="form-check-input" type="@inputType" id="@id" name="@AnswerForm.Select(row.QuestionId)"
+                                               value="@o.OptionId" checked="@IsChecked(row.QuestionId, o.OptionId)"
+                                               aria-label="@($"{StripTags(rowText)}: {StripTags(o.OptionText)}")" />
+                                        <span class="opt-label" aria-hidden="true">@((MarkupString)(o.OptionText ?? ""))</span>
+                                    </label>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </fieldset>
+    };
+
+    private RenderFragment Req(SurveyQuestion q) => __builder =>
+    {
+        if (q.Required)
+        {
+            <span class="text-danger" aria-hidden="true"> *</span>
+            <span class="visually-hidden"> (@(Es ? "obligatoria" : "required"))</span>
+        }
+    };
+
+    private static string StripTags(string? html) =>
+        System.Text.RegularExpressions.Regex.Replace(html ?? "", "<[^>]*>", "").Replace("&nbsp;", " ").Trim();
+}
