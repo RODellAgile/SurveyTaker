@@ -1,4 +1,4 @@
-namespace SurveyTaker.Web.Services;
+﻿namespace SurveyTaker.Web.Services;
 
 /// <summary>
 /// Screen text by string ID, English and Spanish. Spanish is used for survey types STUSPAN and FAMSPAN.
@@ -25,7 +25,7 @@ public static class Texts
         ["ConfirmPrompt"] = "Please confirm this is your school and survey, then start.",
         ["NotRight"] = "If this is not your school or survey, please check the link you were given.",
         ["QuestionCount"] = "The survey consists of {0} questions.",
-        ["PageOf"] = "Page {0} of {1}",
+        ["PageOf"] = "Question {0} of {1}",
         ["Other"] = "Other (please specify)",
         ["SelectOne"] = "Please select",
         ["GroupPrompt"] = "How many people are in the group taking this survey together?",
@@ -43,26 +43,26 @@ public static class Texts
     {
         ["Start"] = "Empiece \"Speak Up\"",
         ["Next"] = "Siguiente",
-        ["Back"] = "Atrás",
+        ["Back"] = "AtrÃ¡s",
         ["Finish"] = "Terminar",
         ["Continue"] = "Continuar",
         ["District"] = "Distrito",
         ["School"] = "Escuela",
         ["Survey"] = "Encuesta",
         ["ConfirmPrompt"] = "Por favor, confirme que esta es su escuela y encuesta, y luego empiece.",
-        ["NotRight"] = "Si esta no es su escuela o encuesta, por favor revise el enlace que recibió.",
+        ["NotRight"] = "Si esta no es su escuela o encuesta, por favor revise el enlace que recibiÃ³.",
         ["QuestionCount"] = "La encuesta consiste de {0} preguntas.",
-        ["PageOf"] = "Página {0} de {1}",
+        ["PageOf"] = "PÃ¡gina {0} de {1}",
         ["Other"] = "Otro (por favor especifique)",
         ["SelectOne"] = "Por favor seleccione",
-        ["GroupPrompt"] = "¿Cuántas personas hay en el grupo que toma esta encuesta juntos?",
-        ["GroupHelp"] = "Escriba un número del 2 al 999.",
-        ["GroupInvalid"] = "Por favor escriba un número del 2 al 999.",
-        ["FixErrors"] = "Por favor corrija las preguntas señaladas.",
-        ["ThankYou"] = "¡Gracias por participar en Speak Up!",
+        ["GroupPrompt"] = "Â¿CuÃ¡ntas personas hay en el grupo que toma esta encuesta juntos?",
+        ["GroupHelp"] = "Escriba un nÃºmero del 2 al 999.",
+        ["GroupInvalid"] = "Por favor escriba un nÃºmero del 2 al 999.",
+        ["FixErrors"] = "Por favor corrija las preguntas seÃ±aladas.",
+        ["ThankYou"] = "Â¡Gracias por participar en Speak Up!",
         ["ThankYouBody"] = "Sus respuestas han sido registradas. Puede cerrar esta ventana.",
-        ["VisitUs"] = "Más información en tomorrow.org",
-        ["AlreadyDone"] = "Esta encuesta ya fue completada. ¡Gracias!",
-        ["LinkProblem"] = "No pudimos abrir esta encuesta. Por favor use el enlace que recibió originalmente.",
+        ["VisitUs"] = "MÃ¡s informaciÃ³n en tomorrow.org",
+        ["AlreadyDone"] = "Esta encuesta ya fue completada. Â¡Gracias!",
+        ["LinkProblem"] = "No pudimos abrir esta encuesta. Por favor use el enlace que recibiÃ³ originalmente.",
     };
 }
