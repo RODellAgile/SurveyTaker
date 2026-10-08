@@ -12,6 +12,8 @@ Legacy Web Forms app (live fallback, do not modify unless Bob asks): `C:\Users\r
 - `db/` – reference copies of the procs (not deployed). `docs/` – handoff and notes.
 - `nuget.config` clears machine-wide feeds (Bob's machine has a dead Telerik v2 feed that breaks restore).
 
+Don't rewrite source files with Windows PowerShell 5.1 `Get-Content`/`Set-Content`: it reads UTF-8 without BOM as ANSI and garbles accented text (broke the Spanish strings once). Use the Edit tool.
+
 Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run: `dotnet run --project src/SurveyTaker.Web`.
 
 ## Rules
