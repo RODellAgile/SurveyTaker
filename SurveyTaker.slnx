@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SurveyTaker.Data/SurveyTaker.Data.csproj" />
+    <Project Path="src/SurveyTaker.Web/SurveyTaker.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SurveyTaker.Tests/SurveyTaker.Tests.csproj" />
+  </Folder>
+</Solution>
