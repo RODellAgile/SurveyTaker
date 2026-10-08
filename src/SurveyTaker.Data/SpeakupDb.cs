@@ -30,12 +30,32 @@ public sealed class SpeakupDb(SqlConnections connections)
         return await cn.QueryFirstOrDefaultAsync<DistrictOpenClose>(Proc("GetDistrictOpenClose", new { orgid = organizationId }, ct));
     }
 
-    /// <summary>GetOrganizationInfo by district link code (first result set only).</summary>
+    /// <summary>GetOrganizationInfo by district link code (first result set only). Used by /D/ links.</summary>
     public async Task<OrganizationInfo?> GetOrganizationByLinkCodeAsync(string linkCode, CancellationToken ct = default)
     {
         await using var cn = await connections.OpenSpeakupAsync(ct);
         await using var grid = await cn.QueryMultipleAsync(Proc("GetOrganizationInfo", new { linkcode = linkCode }, ct));
         return await grid.ReadFirstOrDefaultAsync<OrganizationInfo>();
+    }
+
+    /// <summary>GetOrganizationInfo by organization ID (first result set only). Used by /S/ links after the school lookup.</summary>
+    public async Task<OrganizationInfo?> GetOrganizationByIdAsync(int organizationId, CancellationToken ct = default)
+    {
+        await using var cn = await connections.OpenSpeakupAsync(ct);
+        await using var grid = await cn.QueryMultipleAsync(Proc("GetOrganizationInfo", new { orgid = organizationId }, ct));
+        return await grid.ReadFirstOrDefaultAsync<OrganizationInfo>();
+    }
+
+    /// <summary>
+    /// School lookup by link code. Same inline query as legacy SchoolStart.ValidateSch: no status filter,
+    /// first row wins. Null when the code is unknown.
+    /// </summary>
+    public async Task<SchoolRegistration?> GetRegistrationByLinkCodeAsync(string linkCode, CancellationToken ct = default)
+    {
+        await using var cn = await connections.OpenSpeakupAsync(ct);
+        return await cn.QueryFirstOrDefaultAsync<SchoolRegistration>(new CommandDefinition(
+            "SELECT Organization_Id, Registration_Id, RegistrantName, MailState FROM Registrations WHERE LinkCode = @linkcode;",
+            new { linkcode = new DbString { Value = linkCode, IsAnsi = true, Length = 10 } }, cancellationToken: ct));
     }
 
     /// <summary>GetDescriptorText: editable text block by key; null when missing.</summary>

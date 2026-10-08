@@ -46,6 +46,15 @@ public sealed class OrganizationInfo
     public string? Status { get; init; }
 }
 
+/// <summary>School found by link code (legacy SchoolStart inline query on Registrations).</summary>
+public sealed class SchoolRegistration
+{
+    public int? OrganizationId { get; init; }
+    public int RegistrationId { get; init; }
+    public string? RegistrantName { get; init; }
+    public string? MailState { get; init; }
+}
+
 /// <summary>Survey header from SurveyBank.dbo.surveys (GetSurveyDesc).</summary>
 public sealed class SurveyInfo
 {

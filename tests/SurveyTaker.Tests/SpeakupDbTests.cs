@@ -17,6 +17,21 @@ public class SpeakupDbTests
     }
 
     [Fact]
+    public async Task GetRegistrationByLinkCode_FindsSchoolAndItsDistrict()
+    {
+        await using var cn = new Microsoft.Data.SqlClient.SqlConnection(LocalDb.Options.Speakup);
+        var (code, regId, orgId) = await Dapper.SqlMapper.QueryFirstAsync<(string, int, int)>(cn,
+            "SELECT TOP 1 LinkCode, Registration_ID, Organization_ID FROM Registrations WHERE LinkCode IS NOT NULL AND Organization_ID IS NOT NULL ORDER BY Registration_ID DESC");
+
+        var school = await _db.GetRegistrationByLinkCodeAsync(code);
+        Assert.NotNull(school);
+        Assert.Equal(regId, school.RegistrationId);
+        Assert.Equal(orgId, school.OrganizationId);
+
+        Assert.Null(await _db.GetRegistrationByLinkCodeAsync("ZZZZ-not-a-code"));
+    }
+
+    [Fact]
     public async Task GetMaintenanceDate_ReturnsRows()
     {
         Assert.NotEmpty(await _db.GetMaintenanceDateAsync());
