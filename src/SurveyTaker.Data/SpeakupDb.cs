@@ -81,6 +81,30 @@ public sealed class SpeakupDb(SqlConnections connections)
         }, ct));
     }
 
+    /// <summary>
+    /// LogEntryEnhanced: writes to SpeakupLog, the table Bob searches. Values are cut to the column widths
+    /// (legacy threw on an over-long user agent). Callers should not let a logging failure break a page.
+    /// </summary>
+    public async Task LogEntryEnhancedAsync(LogEntry e, CancellationToken ct = default)
+    {
+        await using var cn = await connections.OpenSpeakupAsync(ct);
+        await cn.ExecuteAsync(Proc("LogEntryEnhanced", new
+        {
+            Page_File = Ansi(e.PageFile, 50),
+            Method = Ansi(e.Method, 50),
+            EntryType = Ansi(e.EntryType, 20),
+            IP = Ansi(e.Ip, 50),
+            Referer = Ansi(e.Referer, 200),
+            UserAgent = Ansi(e.UserAgent, 200),
+            ValueName = Ansi(e.ValueName, 50),
+            Value = Ansi(e.Value, 100),
+            EntryText = new DbString { Value = e.EntryText, IsAnsi = true, Length = -1 },
+        }, ct));
+    }
+
+    private static DbString Ansi(string? value, int max) =>
+        new() { Value = value is { Length: var n } && n > max ? value[..max] : value, IsAnsi = true, Length = max };
+
     // ---- Taking a survey ---------------------------------------------------
 
     /// <summary>StartNewSurvey: inserts the users_surveys row and returns the new taken_survey_id.</summary>

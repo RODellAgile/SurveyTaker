@@ -31,6 +31,13 @@ public static class SurveyRules
     }
 
     /// <summary>
+    /// Number of question rows on pages before <paramref name="page"/>. Sent to UpdateSurveyProgress as both
+    /// quesoffset and quescompleted (Bob, 2026-10-08: record real progress — legacy always sent 0).
+    /// Counts rows the same way MarkSurveyCompleted does, so a finished survey ends at the total.
+    /// </summary>
+    public static int QuestionsBeforePage(int[] pages, int page) => pages.Count(p => p < page);
+
+    /// <summary>
     /// The "Other" option of a question, matched as in the legacy interim fix (commit a994e51, 2026-09-27):
     /// option text, trimmed and upper-cased, starts with OTHER or OTR. Options are scanned in proc order and the
     /// last match wins. Null when no option matches.

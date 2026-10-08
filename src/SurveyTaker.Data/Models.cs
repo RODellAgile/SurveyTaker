@@ -130,6 +130,18 @@ public sealed class TakenSurvey
 /// <summary>Row from answersDaily (RetrievePartialSurvey) or a row to save (SaveAnswer).</summary>
 public sealed record Answer(int QuestionId, int? OptionId, string? OptionValue);
 
+/// <summary>One SpeakupLog row (LogEntryEnhanced). EntryType: DEBUG, ERROR, STATUS, LOG, ...</summary>
+public sealed record LogEntry(
+    string PageFile,
+    string Method,
+    string EntryType,
+    string? Ip = null,
+    string? Referer = null,
+    string? UserAgent = null,
+    string? ValueName = null,
+    string? Value = null,
+    string? EntryText = null);
+
 /// <summary>Parameters for StartNewSurvey.</summary>
 public sealed record NewSurvey(
     int SurveyId,

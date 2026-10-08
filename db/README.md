@@ -33,9 +33,11 @@ What the new app must reproduce so its rows match the old app's:
   - integer: one row **per option, even blank** (value NULL when blank); legacy saved the untrimmed text unvalidated.
   - text: one row with OptionId NULL and the (untrimmed) text — **even when blank** (both NULL).
   - dropdownlist: always one row with the selected value (NULLs when nothing chosen). No active questions use it.
-- **Progress:** legacy `UpdateSurveyProgress` sends quesoffset = 0 and quescompleted = 0 always, page = the page being moved to. Not called on the final Next.
+- **Progress:** legacy `UpdateSurveyProgress` sends quesoffset = 0 and quescompleted = 0 always, page = the page being moved to. Not called on the final Next. **[DECIDED Bob 2026-10-08] New app records real progress:** quesoffset = quescompleted = question rows on pages before the page moved to (`SurveyRules.QuestionsBeforePage`); the proc keeps the high-water mark.
+- **Blank answers – [DECIDED]:** keep saving blank text/integer rows exactly as legacy does; reports handle them.
+- **Logging – [DECIDED]:** new app writes key events (start, restart, errors, completion) to `LogEntryEnhanced`, Page_File values prefixed so old and new are distinguishable (e.g. `ST.Start`). Logging failures never break a page.
 - **Completion:** `MarkSurveyCompleted @quescompleted = total question rows from GetSurveyToTake` (grid sub-rows each count).
 - **Restart:** `GetRestartInfo`; `completed = 'YES'` → don't reopen. Legacy forgot to read QuesPerPage on restart (every row became its own page); the new app honors the stored value.
 - **Cookie:** `ProjectTomorrowSurvey` = TSI, 3 hours (set at start).
 - **Logging:** legacy writes page events to proc `LogEntryEnhanced` (Page_File, Method, EntryType, IP, Referer, UserAgent, ValueName, Value, EntryText). Bob's log analysis uses this table.
-- **Legacy kludges not ported unless Bob says so:** district link `5BF7` bypasses the season check; org 25690 relabels EDUCATOR as "Teacher"; VA uses deck `VA2022` for school survey types; survey 162 → LookupBuildingQS (page doesn't exist); group surveys hidden from the school survey list.
+- **Legacy kludges – [DECIDED Bob 2026-10-08]: none ported.** district link `5BF7` bypasses the season check; org 25690 relabels EDUCATOR as "Teacher"; VA uses deck `VA2022` for school survey types; survey 162 → LookupBuildingQS (page doesn't exist); group surveys hidden from the school survey list.

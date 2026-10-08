@@ -50,3 +50,29 @@ public class SurveyRulesTests
         Assert.Null(SurveyRules.FindOtherOptionId([O(1, "Yes"), O(2, "No")]));
     }
 }
+
+public class LoggingAndProgressTests
+{
+    [Fact]
+    public void QuestionsBeforePage_CountsRowsOnEarlierPages()
+    {
+        int[] pages = [1, 2, 2, 2, 3];
+        Assert.Equal(0, SurveyRules.QuestionsBeforePage(pages, 1));
+        Assert.Equal(1, SurveyRules.QuestionsBeforePage(pages, 2));
+        Assert.Equal(4, SurveyRules.QuestionsBeforePage(pages, 3));
+        Assert.Equal(5, SurveyRules.QuestionsBeforePage(pages, 4)); // past the end = total rows
+    }
+
+    [Fact]
+    public async Task LogEntryEnhanced_WritesAndTruncatesLongValues()
+    {
+        var marker = "ST.Test." + Guid.NewGuid().ToString("N")[..12];
+        await new SpeakupDb(LocalDb.Connections).LogEntryEnhancedAsync(
+            new LogEntry(marker, "Test", "DEBUG", UserAgent: new string('x', 500), EntryText: "integration test"));
+
+        await using var cn = new Microsoft.Data.SqlClient.SqlConnection(LocalDb.Options.Speakup);
+        var ua = await Dapper.SqlMapper.QuerySingleAsync<string>(cn, "SELECT HTTP_User_Agent FROM SpeakupLog WHERE Page_File = @marker", new { marker });
+        Assert.Equal(200, ua.Length);
+        await Dapper.SqlMapper.ExecuteAsync(cn, "DELETE FROM SpeakupLog WHERE Page_File = @marker", new { marker });
+    }
+}
