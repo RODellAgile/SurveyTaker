@@ -22,7 +22,7 @@ Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run
 - **Never point at production** SQL (`DBEINFOPT\SQL2019` / 10.0.8.23). Local DBs: `Speakup2026_2027`, `Speakup2025_2026` (last season, full data — good for comparisons), `SurveyBank`, `Institution` (pending restore).
 - Season values live in config (`Season:SurveyYear`, `Season:TextYear`).
 - One top-level question per page (a grid counts as one); honor stored `quesperpage` on restart for surveys started by the old app.
-- Fix "Other" detection (starts-with, not exact match). Enforce group limits server-side. English + Spanish via resource files. WCAG 2.2 AA, mobile-first, branding tokens per handoff §3.
+- Fix "Other" detection (starts-with, not exact match). Group surveys: `surveys.GroupSurvey = 1` → ask respondent count first (`UpdateK2GrpCnt`), each integer answer ≤ `k2grpcnt` server-side; the old 6/55/110/471 exact-sum check is deprecated (see db/README.md). English + Spanish via resource files. WCAG 2.2 AA, mobile-first, branding tokens per handoff §3.
 - Component library: **[OPEN]** Bob is confirming what the team uses. Until then plain Blazor + CSS tokens, no third-party UI library.
 
 ## Working with Bob
