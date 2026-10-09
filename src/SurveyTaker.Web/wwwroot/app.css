@@ -13,20 +13,93 @@
     --color-error: #C6383A;
     --color-success: #1E7A50;
     --color-selected-bg: #E4EFF8;
+    --color-on-primary: #FFFFFF;
+    --color-primary-rgb: 0, 80, 144;
 
     --bs-body-bg: var(--color-bg);
     --bs-body-color: var(--color-text);
     --bs-secondary-color: var(--color-text-muted);
     --bs-border-color: var(--color-border);
     --bs-primary: var(--color-primary);
-    --bs-primary-rgb: 0, 80, 144;
+    --bs-primary-rgb: var(--color-primary-rgb);
     --bs-link-color: var(--color-primary);
-    --bs-link-color-rgb: 0, 80, 144;
+    --bs-link-color-rgb: var(--color-primary-rgb);
     --bs-link-hover-color: var(--color-primary-hover);
+    --bs-link-hover-color-rgb: var(--color-primary-rgb);
     --bs-body-font-size: 1.0625rem;
 }
 
-body { background: var(--color-bg); }
+/* Dark theme. Chosen 2026-10-09 to meet WCAG 2.2 AA contrast (body text ~14:1, muted ~8:1, links/buttons ~8:1);
+   replace with the staff spec v0.14 section 12 values when available. Applied when the visitor picks Dark, or
+   picks Auto (the default) and the device is in dark mode. The logo always sits on a white tile. */
+:root[data-theme="dark"] {
+    --color-bg: #0F1A2A;
+    --color-surface: #17253A;
+    --color-text: #E8EEF5;
+    --color-text-muted: #B4C1D2;
+    --color-primary: #7CC0F2;
+    --color-primary-hover: #A3D3F6;
+    --color-control-border: #8A9BB3;
+    --color-border: #2C3D57;
+    --color-focus: #A3D3F6;
+    --color-error: #FF9C94;
+    --color-success: #6FD8A3;
+    --color-selected-bg: #1F3D60;
+    --color-on-primary: #0B1626;
+    --color-primary-rgb: 124, 192, 242;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]):not([data-theme="dark"]) {
+        --color-bg: #0F1A2A;
+        --color-surface: #17253A;
+        --color-text: #E8EEF5;
+        --color-text-muted: #B4C1D2;
+        --color-primary: #7CC0F2;
+        --color-primary-hover: #A3D3F6;
+        --color-control-border: #8A9BB3;
+        --color-border: #2C3D57;
+        --color-focus: #A3D3F6;
+        --color-error: #FF9C94;
+        --color-success: #6FD8A3;
+        --color-selected-bg: #1F3D60;
+        --color-on-primary: #0B1626;
+        --color-primary-rgb: 124, 192, 242;
+        color-scheme: dark;
+    }
+}
+
+body { background: var(--color-bg); color: var(--color-text); }
+a { color: var(--color-primary); }
+a:hover { color: var(--color-primary-hover); }
+.form-control, .form-select { background-color: var(--color-surface); color: var(--color-text); }
+.text-body-secondary, .form-text { color: var(--color-text-muted) !important; }
+.alert-danger { background: transparent; border-color: var(--color-error); color: var(--color-error); }
+.list-group-item { background: var(--color-surface); color: var(--color-text); border-color: var(--color-border); }
+.list-group-item-action:hover, .list-group-item-action:focus { background: var(--color-selected-bg); color: var(--color-text); }
+.card { background: var(--color-surface); color: var(--color-text); }
+
+/* Logo: always on a white tile (the logo file has a white background, and the tile reads well in both themes). */
+.logo-tile { display: inline-flex; align-items: center; justify-content: center; background: #FFFFFF;
+    border: 1px solid #E3E6EB; border-radius: 12px; }
+.logo-tile img { display: block; height: auto; }
+.logo-lg { padding: 18px 20px; }
+.logo-lg img { width: 200px; }
+.logo-sm { padding: 6px 8px; border-radius: 8px; }
+.logo-sm img { width: 100px; } /* half the completion-page size */
+
+/* Completion card (Speak Up team mockup) */
+.thanks-card { max-width: 760px; margin: 2rem auto; padding: 2.5rem 2rem; text-align: center; background: var(--color-surface);
+    border-top: 4px solid var(--color-accent); border-radius: 16px; box-shadow: 0 4px 16px rgba(18, 35, 58, 0.08); }
+.thanks-card .logo-tile { margin-bottom: 1.75rem; }
+.thanks-card h1 { font-size: 2rem; font-weight: 700; margin-bottom: 1rem; }
+.thanks-card p { color: var(--color-text-muted); font-size: 1.15rem; margin: 0 auto; max-width: 620px; }
+.thanks-card a { font-weight: 600; }
+
+/* Theme switch in the header */
+.theme-switch { margin-left: auto; display: flex; gap: 2px; font-size: .9rem; }
+.theme-switch a { padding: .35rem .6rem; min-height: 32px; border-radius: 6px; text-decoration: none; color: var(--color-text-muted); }
+.theme-switch a[aria-current="true"] { background: var(--color-selected-bg); color: var(--color-text); font-weight: 600; }
+.theme-switch a:hover { color: var(--color-text); }
 
 .container-narrow { max-width: 760px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
 
@@ -35,6 +108,8 @@ body { background: var(--color-bg); }
 /* Header */
 .site-header { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
 .site-header .container-narrow { min-height: 56px; }
+.header-row { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; }
+@media (max-width: 480px) { .brand-title { font-size: .9rem; } .theme-switch { width: 100%; margin-left: 0; } }
 .brand { font-weight: 700; color: var(--color-primary); }
 .brand-sep { color: var(--color-border); }
 .brand-title { color: var(--color-text-muted); }
@@ -43,11 +118,17 @@ body { background: var(--color-bg); }
 
 /* Buttons */
 .btn-primary {
+    --bs-btn-color: var(--color-on-primary); --bs-btn-hover-color: var(--color-on-primary); --bs-btn-active-color: var(--color-on-primary);
     --bs-btn-bg: var(--color-primary); --bs-btn-border-color: var(--color-primary);
     --bs-btn-hover-bg: var(--color-primary-hover); --bs-btn-hover-border-color: var(--color-primary-hover);
     --bs-btn-active-bg: var(--color-primary-hover); --bs-btn-active-border-color: var(--color-primary-hover);
 }
 .btn { min-height: 44px; padding-left: 1.25rem; padding-right: 1.25rem; }
+.btn-outline-secondary {
+    --bs-btn-color: var(--color-text); --bs-btn-border-color: var(--color-control-border);
+    --bs-btn-hover-color: var(--color-text); --bs-btn-hover-bg: var(--color-selected-bg); --bs-btn-hover-border-color: var(--color-control-border);
+    --bs-btn-active-color: var(--color-text); --bs-btn-active-bg: var(--color-selected-bg);
+}
 
 /* Focus: always visible */
 :focus-visible, .form-check-input:focus, .form-control:focus, .form-select:focus, .btn:focus-visible {

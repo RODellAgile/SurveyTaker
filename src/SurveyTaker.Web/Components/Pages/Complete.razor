@@ -1,16 +1,17 @@
 @page "/complete"
 @inherits SurveyPageBase
+@inject IOptions<SeasonOptions> Season
 
-@* Deliberately simple (Bob, 2026-10-08): thank you, Project Tomorrow, link to tomorrow.org in a new tab. *@
+@* Matches the Speak Up team's mockup (2026-10-09): logo tile, "Thank you!", one line with an inline tomorrow.org
+   link (new tab), gold top edge. *@
 
 <PageTitle>@T("ThankYou")</PageTitle>
-<div class="notice text-center" lang="@(Es ? "es" : "en")">
-    <div class="card"><div class="card-body py-5">
-        <p class="brand fs-4 mb-3">Project Tomorrow</p>
-        <h1 class="h3">@T("ThankYou")</h1>
-        <p class="mb-4">@T("ThankYouBody")</p>
-        <a class="btn btn-primary" href="https://tomorrow.org" target="_blank" rel="noopener">@T("VisitUs")</a>
-    </div></div>
+<div class="thanks-card" lang="@(Es ? "es" : "en")">
+    <div class="logo-tile logo-lg">
+        <img src="img/project-tomorrow-logo.jpg" alt="Project Tomorrow" width="240" height="140" />
+    </div>
+    <h1>@T("ThankYou")</h1>
+    <p>@string.Format(T("ThankYouBody"), Season.Value.ShortYear)<a href="https://tomorrow.org" target="_blank" rel="noopener">tomorrow.org</a>.</p>
 </div>
 <SiteFooter Full="true" />
 

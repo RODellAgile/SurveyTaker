@@ -1,10 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+@* data-theme / data-bs-theme come from the visitor's Light/Dark choice (cookie). Absent = Auto: app.css follows
+   the device setting with prefers-color-scheme. *@
+<html lang="en" data-theme="@Theme.DataTheme(HttpContext)" data-bs-theme="@Theme.DataTheme(HttpContext)">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
+    <meta name="color-scheme" content="@(Theme.DataTheme(HttpContext) ?? "light dark")" />
     <base href="/" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="stylesheet" href="@Assets["lib/bootstrap/bootstrap.min.css"]" />
@@ -20,3 +23,7 @@
 </body>
 
 </html>
+
+@code {
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+}

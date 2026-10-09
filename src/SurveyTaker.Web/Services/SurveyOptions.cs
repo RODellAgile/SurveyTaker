@@ -16,6 +16,9 @@ public sealed class SeasonOptions
     public string TimeZone { get; set; } = "Pacific Standard Time";
 
     public string SurveyTitle => "Speak Up " + TextYear;
+
+    /// <summary>"2026-27" -> "26-27" (the completion page says "Speak Up 26-27").</summary>
+    public string ShortYear => TextYear.Length > 2 ? TextYear[2..] : TextYear;
 }
 
 /// <summary>"Survey" config section.</summary>

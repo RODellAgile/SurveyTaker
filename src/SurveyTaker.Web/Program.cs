@@ -44,6 +44,7 @@ app.Use((ctx, next) =>
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+app.MapGet("/theme", (HttpContext http, string? mode, string? @return) => Theme.Set(http, mode, @return));
 app.MapRazorComponents<App>();
 
 app.Run();

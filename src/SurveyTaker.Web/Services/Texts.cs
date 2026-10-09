@@ -32,9 +32,8 @@ public static class Texts
         ["GroupHelp"] = "Enter a number from 2 to 999.",
         ["GroupInvalid"] = "Please enter a number from 2 to 999.",
         ["FixErrors"] = "Please correct the highlighted questions.",
-        ["ThankYou"] = "Thank you for taking Speak Up!",
-        ["ThankYouBody"] = "Your responses have been recorded. You may close this window.",
-        ["VisitUs"] = "Learn more at tomorrow.org",
+        ["ThankYou"] = "Thank you!",
+        ["ThankYouBody"] = "Thank you for being a part of Speak Up {0}! If you would like to learn more about Project Tomorrow, visit our website ",
         ["AlreadyDone"] = "This survey has already been completed. Thank you!",
         ["LinkProblem"] = "We couldn't open this survey. Please use the link you were originally given.",
     };
@@ -59,9 +58,8 @@ public static class Texts
         ["GroupHelp"] = "Escriba un número del 2 al 999.",
         ["GroupInvalid"] = "Por favor escriba un número del 2 al 999.",
         ["FixErrors"] = "Por favor corrija las preguntas señaladas.",
-        ["ThankYou"] = "¡Gracias por participar en Speak Up!",
-        ["ThankYouBody"] = "Sus respuestas han sido registradas. Puede cerrar esta ventana.",
-        ["VisitUs"] = "Más información en tomorrow.org",
+        ["ThankYou"] = "¡Gracias!",
+        ["ThankYouBody"] = "¡Gracias por participar en Speak Up {0}! Si desea saber más sobre Project Tomorrow, visite nuestro sitio web ",
         ["AlreadyDone"] = "Esta encuesta ya fue completada. ¡Gracias!",
         ["LinkProblem"] = "No pudimos abrir esta encuesta. Por favor use el enlace que recibió originalmente.",
     };
