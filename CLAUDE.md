@@ -31,6 +31,13 @@ Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run
 - Fix "Other" detection (starts-with, not exact match). Group surveys: `surveys.GroupSurvey = 1` → ask respondent count first (`UpdateK2GrpCnt`), each integer answer ≤ `k2grpcnt` server-side; the old 6/55/110/471 exact-sum check is deprecated (see db/README.md). English + Spanish via resource files. WCAG 2.2 AA, mobile-first, branding tokens per handoff §3.
 - UI – **[DECIDED 2026-10-08]**: Agile-Ed team uses Blazor Server + Telerik UI for Blazor + Bootstrap. SurveyTaker uses **Bootstrap + plain HTML form controls**, Project Tomorrow tokens layered on Bootstrap variables, **no Telerik** (survey inputs don't need it; most Telerik Blazor components require interactivity). Stays **static SSR**, not Server mode (phones on flaky networks; stateless rule). Server mode + Telerik are fine for the later admin site.
 
+## Deployed (2026-10-08, night)
+
+- **Live on speakup.tomorrow.org** (IIS site/pool "Speakup", No Managed Code, F:\inetpub\Speakup). Bob ran the smoke tests; Michelle and Sam test on 2026-10-09.
+- Production DB: GetOrganizationForSurvey + GetSchoolsForSurvey created; login speakup_surveytaker created. Settings live in the server's web.config environment variables (not in git; built from `publish/`, which is gitignored).
+- Follow-ups: change the speakup_surveytaker password if not done (it appeared in the session log); set stdoutLogEnabled="false"; clean up test rows (UseSurvey=0 or purge); SurveyBank titles still say "Speakup 2025"; Lawrence County (org 34245) admin password exposed in a session log, so reset it.
+- To redeploy: `dotnet publish src/SurveyTaker.Web -c Release -o publish/SurveyTaker`, then copy everything EXCEPT web.config (the server's has the secrets) and appsettings.Development.json.
+
 ## Status (2026-10-08, evening)
 
 - Working: /S/{school}/{survey} and /S/{school} (type and survey pickers), /D/{district}[/{survey}] (school picker, then pickers, then confirm) → intro → group count → one question per page (7 active types, Other fix, Back/resume, real progress) → completion. 32 tests pass. Click-throughs passed: survey 578 (/S/), group survey 174 (583), and /D/ under the restricted login (586).

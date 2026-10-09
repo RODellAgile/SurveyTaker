@@ -480,3 +480,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Release package for the server (contains server-only settings). Never commit.
+/publish/
