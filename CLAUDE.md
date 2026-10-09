@@ -31,6 +31,11 @@ Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run
 - Fix "Other" detection (starts-with, not exact match). Group surveys: `surveys.GroupSurvey = 1` → ask respondent count first (`UpdateK2GrpCnt`), each integer answer ≤ `k2grpcnt` server-side; the old 6/55/110/471 exact-sum check is deprecated (see db/README.md). English + Spanish via resource files. WCAG 2.2 AA, mobile-first, branding tokens per handoff §3.
 - UI – **[DECIDED 2026-10-08]**: Agile-Ed team uses Blazor Server + Telerik UI for Blazor + Bootstrap. SurveyTaker uses **Bootstrap + plain HTML form controls**, Project Tomorrow tokens layered on Bootstrap variables, **no Telerik** (survey inputs don't need it; most Telerik Blazor components require interactivity). Stays **static SSR**, not Server mode (phones on flaky networks; stateless rule). Server mode + Telerik are fine for the later admin site.
 
+## 2026-10-09
+
+- Team feedback: pleased overall. Built and committed: the logo on every page (header at half size), a completion page matching their mockup, and a Light/Dark/Auto theme (dark palette is ours, WCAG-checked; swap in spec section 12 values when Bob sends them). Update package `publish/update-2026-10-09` (no web.config) is **built but NOT deployed**: waiting on the team's review.
+- More text from the team expected next week. After that: SpeakupAdmin.
+
 ## Deployed (2026-10-08, night)
 
 - **Live on speakup.tomorrow.org** (IIS site/pool "Speakup", No Managed Code, F:\inetpub\Speakup). Bob ran the smoke tests; Michelle and Sam test on 2026-10-09.
