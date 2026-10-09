@@ -1,0 +1,71 @@
+@page "/Q/{SurveyIdText}"
+@inject SurveyBankDb SurveyBank
+@inject SpeakupDb Speakup
+@inject OpenCheck Open
+@inject SurveyStarter Starter
+@inject SurveyLog Log
+@inject NavigationManager Nav
+@inject IOptions<SurveyOptions> Options
+
+@* Quick-start link /Q/{survey id}: no school or district; recorded under the placeholder org/school
+   (Survey:QuickStartOrganizationId / QuickStartRegistrationId). Replaces legacy Q.aspx + QuickSurveyStart.aspx.
+   Differences from legacy (2026-10-08):
+     - A Start button creates the survey. Legacy created it on page load, so link previews and bots made rows:
+       17,490 quick starts in 2025-26 but only 590 completed.
+     - Same as legacy: maintenance check only, no season-date check (quick surveys may run outside the season). *@
+
+@if (_problemTitle is not null)
+{
+    <Notice Title="@_problemTitle"><p>@((MarkupString)(_problemText ?? ""))</p></Notice>
+}
+else if (_survey is not null)
+{
+    <PageTitle>@_survey.Name</PageTitle>
+    <div lang="@(_es ? "es" : "en")">
+        <h1 class="h3 mb-4">@_survey.Name</h1>
+        <form method="post" @formname="quickstart" @onsubmit="StartAsync">
+            <AntiforgeryToken />
+            <button type="submit" class="btn btn-primary btn-lg">@Texts.Get("Start", _es)</button>
+        </form>
+    </div>
+    <SiteFooter Full="true" />
+}
+
+@code {
+    [Parameter] public string SurveyIdText { get; set; } = "";
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    private ActiveSurvey? _survey;
+    private int _surveyId;
+    private bool _es;
+    private string? _problemTitle, _problemText;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var site = await Open.SiteAsync();
+        if (site.Status == OpenStatus.Maintenance) { Problem(ClosedMessages.For(site)); return; }
+
+        if (!int.TryParse(SurveyIdText, out _surveyId) || (_survey = await SurveyBank.ChkSurveyIdAsync(_surveyId)) is null)
+        {
+            await Log.Error("QuickStart", "ValidateSurveyId", "SurveyId", SurveyIdText, "Survey not found or not active");
+            Problem(ClosedMessages.SurveyNotAvailable());
+            return;
+        }
+        _es = Texts.IsSpanish(_survey.SurveyType);
+
+        if (!HttpMethods.IsPost(HttpContext.Request.Method))
+        {
+            try { await Speakup.LogEntryPointAsync("QUICKSTART", registrationId: Options.Value.QuickStartRegistrationId, surveyId: _surveyId); }
+            catch (Exception ex) { await Log.Error("QuickStart", "LogEntryPoint", "SurveyId", SurveyIdText, ex.Message); }
+        }
+    }
+
+    private async Task StartAsync()
+    {
+        if (_survey is null) return;
+        Nav.NavigateTo(await Starter.StartAsync(HttpContext,
+            Options.Value.QuickStartOrganizationId, Options.Value.QuickStartRegistrationId, _surveyId, "QuickStart"));
+    }
+
+    private void Problem((string Title, string Html) p) { _problemTitle = p.Title; _problemText = p.Html; }
+}

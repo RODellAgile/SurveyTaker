@@ -36,6 +36,13 @@ public sealed class SurveyOptions
     /// <summary>Default survey deck for the survey-type and survey pickers (legacy Sites.DefaultDeck).</summary>
     public string DefaultDeck { get; set; } = "SUACTIVE";
 
+    /// <summary>
+    /// Placeholder district and school that /Q/ quick-start surveys are recorded under (legacy QuickSurveyStart:
+    /// 73021 "Targeted Survey District" / 252487 "Targeted Survey School").
+    /// </summary>
+    public int QuickStartOrganizationId { get; set; } = 73021;
+    public int QuickStartRegistrationId { get; set; } = 252487;
+
     /// <summary>Sponsor slots for the footers. Placeholders until logos arrive.</summary>
     public List<Sponsor> Sponsors { get; set; } = [];
 }
