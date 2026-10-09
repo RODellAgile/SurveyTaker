@@ -1,0 +1,79 @@
+@inject SpeakupDb Speakup
+@inject IOptions<SurveyOptions> Options
+
+@* Survey-type list, then the surveys of the chosen type, for a district (legacy ShowSurveyTypes/ShowSurveyList).
+   Stateless: the chosen type travels in the URL (?type=...). Each survey links to SurveyUrl(surveyId). *@
+
+@if (_surveys is not null)
+{
+    <h2 class="h5">@(_typeName ?? "Surveys")</h2>
+    @if (_surveys.Count == 0)
+    {
+        <p>There are no surveys of this type available right now.</p>
+    }
+    else
+    {
+        <p>Choose your survey:</p>
+        <div class="list-group mb-3">
+            @foreach (var s in _surveys)
+            {
+                <a class="list-group-item list-group-item-action py-3" href="@SurveyUrl(s.SurveyId)">@s.Name</a>
+            }
+        </div>
+    }
+    @if (_types is { Count: > 1 })
+    {
+        <a href="@TypeUrl(null)">&larr; Choose a different type of survey</a>
+    }
+}
+else if (_types is not null)
+{
+    @if (_types.Count == 0)
+    {
+        <p>There are no surveys available right now. Please check with your school or district.</p>
+    }
+    else
+    {
+        <p>Which survey are you taking?</p>
+        <div class="list-group">
+            @foreach (var t in _types)
+            {
+                <a class="list-group-item list-group-item-action py-3" href="@TypeUrl(t.SurveyType)">@(t.SurveyTypeName ?? t.SurveyType)</a>
+            }
+        </div>
+    }
+}
+
+@code {
+    /// <summary>District whose surveys are offered (for /S/ links, the school's district).</summary>
+    [Parameter, EditorRequired] public int OrganizationId { get; set; }
+
+    /// <summary>Currently chosen survey type (from the query string), or null to show the type list.</summary>
+    [Parameter] public string? SelectedType { get; set; }
+
+    /// <summary>Legacy school links hid group surveys from the list; district links showed them.</summary>
+    [Parameter] public bool ExcludeGroupSurveys { get; set; }
+
+    [Parameter, EditorRequired] public Func<string?, string> TypeUrl { get; set; } = default!;
+    [Parameter, EditorRequired] public Func<int, string> SurveyUrl { get; set; } = default!;
+
+    private IReadOnlyList<SurveyTypeItem>? _types;
+    private List<SurveyListItem>? _surveys;
+    private string? _typeName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var deck = Options.Value.DefaultDeck;
+        _types = await Speakup.GetSurveyTypesAsync(OrganizationId, deck);
+
+        // A single type: skip straight to its surveys.
+        var type = !string.IsNullOrEmpty(SelectedType) ? SelectedType : _types.Count == 1 ? _types[0].SurveyType : null;
+        if (type is null || !_types.Any(t => string.Equals(t.SurveyType, type, StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        _typeName = _types.First(t => string.Equals(t.SurveyType, type, StringComparison.OrdinalIgnoreCase)).SurveyTypeName;
+        _surveys = (await Speakup.GetSurveyListAsync(OrganizationId, type, deck))
+            .Where(s => !(ExcludeGroupSurveys && s.GroupSurvey))
+            .ToList();
+    }
+}

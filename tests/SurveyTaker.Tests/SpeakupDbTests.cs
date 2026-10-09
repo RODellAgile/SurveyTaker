@@ -32,6 +32,38 @@ public class SpeakupDbTests
     }
 
     [Fact]
+    public async Task DistrictLookups_ReturnOnlySafeColumnsAndMatchByIdOrCode()
+    {
+        // 34245 = Lawrence County Schools (AL), link code DKYW, in the 2026-10-08 restore
+        var byId = await _db.GetOrganizationByIdAsync(34245);
+        var byCode = await _db.GetOrganizationByLinkCodeAsync("DKYW");
+        Assert.NotNull(byId);
+        Assert.NotNull(byCode);
+        Assert.Equal(byId.OrganizationId, byCode.OrganizationId);
+        Assert.Equal("AL", byId.MailState);
+        Assert.Null(await _db.GetOrganizationByLinkCodeAsync("NOPE1"));
+    }
+
+    [Fact]
+    public async Task SchoolPicker_ListsOpenSchoolsInTheDistrict()
+    {
+        var schools = await _db.GetSchoolsForSurveyAsync(34245);
+        Assert.NotEmpty(schools);
+        Assert.Contains(schools, s => s.RegistrationId == 145777); // Hatton High School
+        Assert.All(schools, s => Assert.False(string.IsNullOrEmpty(s.RegistrantName)));
+    }
+
+    [Fact]
+    public async Task SurveyPickers_ReturnTypesAndSurveysForTheDistrict()
+    {
+        var types = await _db.GetSurveyTypesAsync(34245, "SUACTIVE");
+        Assert.Contains(types, t => t.SurveyType == "STUDENT");
+        var surveys = await _db.GetSurveyListAsync(34245, "STUDENT", "SUACTIVE");
+        Assert.NotEmpty(surveys);
+        Assert.All(surveys, s => Assert.Equal("STUDENT", s.SurveyType));
+    }
+
+    [Fact]
     public async Task GetMaintenanceDate_ReturnsRows()
     {
         Assert.NotEmpty(await _db.GetMaintenanceDateAsync());

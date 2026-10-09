@@ -47,6 +47,27 @@ public sealed class SpeakupDb(SqlConnections connections)
         return await cn.QueryFirstOrDefaultAsync<OrganizationInfo>(Proc("GetOrganizationForSurvey", new { orgid = organizationId }, ct));
     }
 
+    /// <summary>Open schools in a district, for the /D/ school picker (GetSchoolsForSurvey, added for SurveyTaker).</summary>
+    public async Task<IReadOnlyList<SchoolItem>> GetSchoolsForSurveyAsync(int organizationId, CancellationToken ct = default)
+    {
+        await using var cn = await connections.OpenSpeakupAsync(ct);
+        return (await cn.QueryAsync<SchoolItem>(Proc("GetSchoolsForSurvey", new { orgid = organizationId }, ct))).AsList();
+    }
+
+    /// <summary>GetSurveyTypesDist: survey types available to a district (its marked surveys, or the deck's for its state).</summary>
+    public async Task<IReadOnlyList<SurveyTypeItem>> GetSurveyTypesAsync(int organizationId, string deck, CancellationToken ct = default)
+    {
+        await using var cn = await connections.OpenSpeakupAsync(ct);
+        return (await cn.QueryAsync<SurveyTypeItem>(Proc("GetSurveyTypesDist", new { orgid = organizationId, deck }, ct))).AsList();
+    }
+
+    /// <summary>GetSurveyListByTypeDist: surveys of one type available to a district, in deck order.</summary>
+    public async Task<IReadOnlyList<SurveyListItem>> GetSurveyListAsync(int organizationId, string surveyType, string deck, CancellationToken ct = default)
+    {
+        await using var cn = await connections.OpenSpeakupAsync(ct);
+        return (await cn.QueryAsync<SurveyListItem>(Proc("GetSurveyListByTypeDist", new { orgid = organizationId, survtype = surveyType, deck }, ct))).AsList();
+    }
+
     /// <summary>
     /// School lookup by link code. Same inline query as legacy SchoolStart.ValidateSch: no status filter,
     /// first row wins. Null when the code is unknown.

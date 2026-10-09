@@ -55,6 +55,30 @@ public sealed class SchoolRegistration
     public string? MailState { get; init; }
 }
 
+/// <summary>A school in the /D/ school picker (GetSchoolsForSurvey).</summary>
+public sealed class SchoolItem
+{
+    public int RegistrationId { get; init; }
+    public string? RegistrantName { get; init; }
+    public string? RegistrantType { get; init; }
+}
+
+/// <summary>A survey type in the picker (GetSurveyTypesDist).</summary>
+public sealed class SurveyTypeItem
+{
+    public string SurveyType { get; init; } = "";
+    public string? SurveyTypeName { get; init; }
+}
+
+/// <summary>A survey in the picker (GetSurveyListByTypeDist).</summary>
+public sealed class SurveyListItem
+{
+    public int SurveyId { get; init; }
+    public string? Name { get; init; }
+    public string? SurveyType { get; init; }
+    public bool GroupSurvey { get; init; }
+}
+
 /// <summary>Survey header from SurveyBank.dbo.surveys (GetSurveyDesc).</summary>
 public sealed class SurveyInfo
 {

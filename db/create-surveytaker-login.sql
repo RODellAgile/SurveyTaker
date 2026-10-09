@@ -6,8 +6,12 @@
    respondents' answers). SurveyTaker is public and anonymous, so it gets only what it calls:
      - EXECUTE on the stored procedures listed below (they do all reads/writes via ownership chaining)
      - SELECT on 5 columns of Registrations (the school link-code lookup; no password columns)
-   District lookups use GetOrganizationForSurvey (create it first: db/Speakup/procs/GetOrganizationForSurvey.sql),
-   NOT the legacy GetOrganizationInfo, which returns o.* including plain-text passwords. No Institution access.
+     - SELECT on SurveyBank's survey-definition tables (surveys, SurveyType, SurveyDeck, SurveyDeckSurveyList),
+       read by the survey pickers across databases
+   Uses two procs added for SurveyTaker; CREATE THEM FIRST in the season DB (db/Speakup/procs/):
+     GetOrganizationForSurvey (not the legacy GetOrganizationInfo, which returns o.* incl. plain-text passwords)
+     GetSchoolsForSurvey      (not the legacy GetInstInDistrict, which returns contact names/emails)
+   No Institution access needed.
 
    HOW TO RUN (SSMS, as sa or another sysadmin):
      1. Set the season database name below if it isn't Speakup2026_2027.
@@ -38,7 +42,9 @@ GRANT EXECUTE ON dbo.GetMaintenanceDate       TO speakup_surveytaker;
 GRANT EXECUTE ON dbo.GetSurveyDates           TO speakup_surveytaker;
 GRANT EXECUTE ON dbo.GetDistrictOpenClose     TO speakup_surveytaker;
 GRANT EXECUTE ON dbo.GetOrganizationForSurvey TO speakup_surveytaker;
-GRANT EXECUTE ON dbo.GetInstInDistrict        TO speakup_surveytaker;  -- district school picker (/D/ links)
+GRANT EXECUTE ON dbo.GetSchoolsForSurvey      TO speakup_surveytaker;  -- school picker (/D/ links); added proc, no contact data
+GRANT EXECUTE ON dbo.GetSurveyTypesDist       TO speakup_surveytaker;  -- survey-type picker
+GRANT EXECUTE ON dbo.GetSurveyListByTypeDist  TO speakup_surveytaker;  -- survey picker
 GRANT EXECUTE ON dbo.GetDescriptorText        TO speakup_surveytaker;
 GRANT EXECUTE ON dbo.LogEntryPoint            TO speakup_surveytaker;
 GRANT EXECUTE ON dbo.LogEntryEnhanced         TO speakup_surveytaker;
@@ -63,6 +69,12 @@ IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'speakup_surv
 GRANT EXECUTE ON dbo.ChkSurveyId     TO speakup_surveytaker;
 GRANT EXECUTE ON dbo.GetSurveyDesc   TO speakup_surveytaker;
 GRANT EXECUTE ON dbo.GetSurveyToTake TO speakup_surveytaker;
+-- GetSurveyTypesDist / GetSurveyListByTypeDist live in the season DB but read these SurveyBank tables, and
+-- ownership chaining does not cross databases. Survey definitions only; nothing sensitive.
+GRANT SELECT ON dbo.surveys              TO speakup_surveytaker;
+GRANT SELECT ON dbo.SurveyType           TO speakup_surveytaker;
+GRANT SELECT ON dbo.SurveyDeckSurveyList TO speakup_surveytaker;
+GRANT SELECT ON dbo.SurveyDeck           TO speakup_surveytaker;
 
 USE master;
 PRINT 'speakup_surveytaker ready.';

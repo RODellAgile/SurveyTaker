@@ -30,8 +30,11 @@ public sealed class SurveyOptions
     /// <summary>Questions per page for new surveys (Bob: one per page).</summary>
     public int QuesPerPage { get; set; } = 1;
 
-    /// <summary>Legacy Web Forms site that handles anything not migrated yet (e.g. https://speakup2026.tomorrow.org).</summary>
+    /// <summary>Legacy Web Forms site (https://speakup2026.tomorrow.org). Survey traffic is NOT sent there (Bob, 2026-10-08).</summary>
     public string LegacyBaseUrl { get; set; } = "";
+
+    /// <summary>Default survey deck for the survey-type and survey pickers (legacy Sites.DefaultDeck).</summary>
+    public string DefaultDeck { get; set; } = "SUACTIVE";
 
     /// <summary>Sponsor slots for the footers. Placeholders until logos arrive.</summary>
     public List<Sponsor> Sponsors { get; set; } = [];

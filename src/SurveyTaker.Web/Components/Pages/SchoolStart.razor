@@ -4,13 +4,12 @@
 @inject SpeakupDb Speakup
 @inject SurveyBankDb SurveyBank
 @inject OpenCheck Open
-@inject SurveyLinks Links
+@inject SurveyStarter Starter
 @inject SurveyLog Log
 @inject NavigationManager Nav
-@inject IOptions<SeasonOptions> Season
-@inject IOptions<SurveyOptions> Options
 
-@* School short link: /S/{school link code}/{survey id}. Replaces legacy S.aspx + SchoolStart.aspx. *@
+@* School short link. /S/{school link code}/{survey id} confirms and starts; /S/{school link code} first lets the
+   respondent pick a survey type and survey (?type=...). Replaces legacy S.aspx + SchoolStart.aspx. *@
 
 @if (_problemTitle is not null)
 {
@@ -35,10 +34,21 @@ else if (_school is not null && _survey is not null)
     </div>
     <SiteFooter Full="true" />
 }
+else if (_school is not null && _school.OrganizationId is int pickerOrg)
+{
+    <PageTitle>Speak Up – @_school.RegistrantName</PageTitle>
+    <h1 class="h3 mb-1">@_school.RegistrantName</h1>
+    <p class="text-body-secondary mb-4">@_district?.OrgName</p>
+    @* Legacy school links hid group surveys from this list. *@
+    <SurveyPicker OrganizationId="pickerOrg" SelectedType="@Type" ExcludeGroupSurveys="true"
+                  TypeUrl="TypeUrl" SurveyUrl="SurveyUrl" />
+    <SiteFooter Full="true" />
+}
 
 @code {
     [Parameter] public string LinkCode { get; set; } = "";
     [Parameter] public string? SurveyIdText { get; set; }
+    [SupplyParameterFromQuery(Name = "type")] public string? Type { get; set; }
     [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
 
     private SchoolRegistration? _school;
@@ -50,23 +60,20 @@ else if (_school is not null && _survey is not null)
 
     private static readonly Regex CodePattern = new("^[A-Za-z0-9]{1,10}$");
 
+    private string Code => Uri.EscapeDataString(LinkCode);
+    private string TypeUrl(string? type) => type is null ? $"S/{Code}" : $"S/{Code}?type={Uri.EscapeDataString(type)}";
+    private string SurveyUrl(int surveyId) => $"S/{Code}/{surveyId}";
+
     protected override async Task OnInitializedAsync()
     {
         // Runs for both GET and the Start POST: everything is re-checked from the database (stateless).
-        if (string.IsNullOrEmpty(SurveyIdText))
-        {
-            // Survey selection lists are not migrated yet: hand off to the legacy site.
-            Nav.NavigateTo($"{Options.Value.LegacyBaseUrl.TrimEnd('/')}/S/{Uri.EscapeDataString(LinkCode)}");
-            return;
-        }
-
         var site = await Open.SiteAsync();
-        if (!site.IsOpen) { ShowClosed(site); return; }
+        if (!site.IsOpen) { Problem(ClosedMessages.For(site)); return; }
 
         if (!CodePattern.IsMatch(LinkCode) || (_school = await Speakup.GetRegistrationByLinkCodeAsync(LinkCode)) is null)
         {
             await Log.Error("SchoolStart", "ValidateSch", "LinkCode", LinkCode, "School link code not found");
-            Problem("We couldn't find that school", "Please check the link you were given. Questions? <a href=\"mailto:speakup@tomorrow.org\">Contact the Speak Up team</a>.");
+            Problem(ClosedMessages.BadLink("school"));
             return;
         }
 
@@ -74,13 +81,26 @@ else if (_school is not null && _survey is not null)
         {
             _district = await Speakup.GetOrganizationByIdAsync(orgId);
             var district = await Open.DistrictAsync(orgId);
-            if (!district.IsOpen) { ShowClosed(district); return; }
+            if (!district.IsOpen) { Problem(ClosedMessages.For(district)); return; }
+        }
+
+        if (string.IsNullOrEmpty(SurveyIdText))
+        {
+            // No survey in the link: show the pickers (needs the school's district).
+            if (_school.OrganizationId is null or 0)
+            {
+                await Log.Error("SchoolStart", "Pickers", "LinkCode", LinkCode, "School has no district; can't list surveys");
+                Problem(ClosedMessages.BadLink("survey list for this school"));
+            }
+            else if (!HttpMethods.IsPost(HttpContext.Request.Method) && Type is null)
+                await LogEntryPoint(null);
+            return;
         }
 
         if (!int.TryParse(SurveyIdText, out var surveyId) || (_survey = await SurveyBank.ChkSurveyIdAsync(surveyId)) is null)
         {
             await Log.Error("SchoolStart", "ValidateSurveyId", "SurveyId", SurveyIdText, $"Survey not found or not active (link code {LinkCode})");
-            Problem("This survey isn't available", "The survey in this link is not active. Please check the link you were given.");
+            Problem(ClosedMessages.SurveyNotAvailable());
             return;
         }
         _es = Texts.IsSpanish(_survey.SurveyType);
@@ -93,51 +113,14 @@ else if (_school is not null && _survey is not null)
     {
         if (_school is null || _survey is null || !int.TryParse(SurveyIdText, out var surveyId))
             return;
-
-        var desc = await SurveyBank.GetSurveyDescAsync(surveyId);
-        var tsi = await Speakup.StartNewSurveyAsync(new NewSurvey(
-            SurveyId: surveyId,
-            OrganizationId: _school.OrganizationId ?? 0,
-            RegistrationId: _school.RegistrationId,
-            SurveyName: desc?.Name ?? _survey.Name ?? "",
-            SurveyTitle: Season.Value.SurveyTitle,
-            SurveyType: desc?.SurveyType ?? _survey.SurveyType ?? "",
-            QuesPerPage: Options.Value.QuesPerPage,
-            Ip: HttpContext.Connection.RemoteIpAddress?.ToString() ?? ""));
-
-        await Log.Info("SchoolStart", "StartSurvey", "orgId/regId/surveyId",
-            $"{_school.OrganizationId}/{_school.RegistrationId}/{surveyId}", $"TSI {tsi}");
-
-        HttpContext.Response.Cookies.Append("ProjectTomorrowSurvey", tsi.ToString(), new CookieOptions
-        {
-            Expires = DateTimeOffset.UtcNow.AddHours(3), HttpOnly = true, Secure = true, SameSite = SameSiteMode.Lax,
-        });
-        Nav.NavigateTo(Links.Url("intro", tsi));
+        Nav.NavigateTo(await Starter.StartAsync(HttpContext, _school.OrganizationId ?? 0, _school.RegistrationId, surveyId, "SchoolStart"));
     }
 
-    private async Task LogEntryPoint(int surveyId)
+    private async Task LogEntryPoint(int? surveyId)
     {
         try { await Speakup.LogEntryPointAsync("SCHOOLSTART", regLinkCode: LinkCode, surveyId: surveyId); }
         catch (Exception ex) { await Log.Error("SchoolStart", "LogEntryPoint", "LinkCode", LinkCode, ex.Message); }
     }
 
-    private void ShowClosed(OpenResult r)
-    {
-        switch (r.Status)
-        {
-            case OpenStatus.Maintenance:
-                Problem("Speak Up is down for maintenance",
-                    $"Please try again after {r.AvailableAt:MMMM d, yyyy h:mm tt}. Thank you for your patience.");
-                break;
-            case OpenStatus.SeasonClosed:
-                Problem("Speak Up is closed", "Survey taking is not open at this time. Thank you for your interest in Speak Up.");
-                break;
-            default:
-                Problem("Survey taking is closed for your district",
-                    r.Message + " Questions? <a href=\"mailto:speakup@tomorrow.org\">Contact the Speak Up team</a>.");
-                break;
-        }
-    }
-
-    private void Problem(string title, string html) { _problemTitle = title; _problemText = html; }
+    private void Problem((string Title, string Html) p) { _problemTitle = p.Title; _problemText = p.Html; }
 }

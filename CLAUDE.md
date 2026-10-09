@@ -18,7 +18,7 @@ Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run
 
 ## Scope (Bob, 2026-10-08)
 
-**speakup.tomorrow.org = SurveyTaker = everything about taking a survey**: the /S/, /D/ and /Q/ short links, start pages, intro, questions, completion. **speakup2026.tomorrow.org becomes the report/admin portal**, and survey taking moves out of it. So SurveyTaker must NOT hand survey traffic back to speakup2026. The current hand-offs (/S/ without a survey id, all /D/ links) are temporary and must be replaced before go-live by: survey-type/survey pickers (/S/ without a survey id), the school picker (/D/), and /Q/ quick start (survey 195 in 2025-26). Open: whether SIDstart, LookupBuilding and Register come over too.
+**speakup.tomorrow.org = SurveyTaker = everything about taking a survey**: the /S/, /D/ and /Q/ short links, start pages, intro, questions, completion. **speakup2026.tomorrow.org becomes the report/admin portal**, and survey taking moves out of it. That's temporary: the admin portal moves on to **speakupadmin.tomorrow.org** once SurveyTaker is fully up. So SurveyTaker must NOT hand survey traffic back to speakup2026. The current hand-offs (/S/ without a survey id, all /D/ links) are temporary and must be replaced before go-live by: survey-type/survey pickers (/S/ without a survey id), the school picker (/D/), and /Q/ quick start (survey 195 in 2025-26). Open: whether SIDstart, LookupBuilding and Register come over too.
 
 ## Rules
 
@@ -33,8 +33,10 @@ Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run
 
 ## Status (2026-10-08, evening)
 
-- Working: /S/ start → intro → group count → one question per page (7 active types, Other fix, Back/resume, real progress) → completion. 29 tests pass. Full click-through on local survey 578 (TSI) passed.
-- Next: test a group survey (e.g. 174) and a Spanish survey (STUSPAN/FAMSPAN); /D/ district links with the school picker (GetInstInDistrict; Institution DB is restored); accessibility and mobile pass; old-vs-new row comparison; IIS deploy and URL Rewrite to Speakup2026.
+- Working: /S/{school}/{survey} and /S/{school} (type and survey pickers), /D/{district}[/{survey}] (school picker, then pickers, then confirm) → intro → group count → one question per page (7 active types, Other fix, Back/resume, real progress) → completion. 32 tests pass. Click-throughs passed: survey 578 (/S/), group survey 174 (583), and /D/ under the restricted login (586).
+- Spanish: no active STUSPAN/FAMSPAN surveys in 2026-27 (all archived). Ask Michelle whether one is planned.
+- Data: SurveyBank survey titles still say "Speakup 2025" (shown as the page heading). Staff to update.
+- Next: /Q/ quick start; decide on SIDstart / LookupBuilding / Register; accessibility and mobile pass; old-vs-new row comparison; production DB setup (2 new procs + create-surveytaker-login.sql); IIS deploy to speakup.tomorrow.org.
 - Security work on the legacy site lives in the speakup2026 repo, not here.
 
 ## Working with Bob

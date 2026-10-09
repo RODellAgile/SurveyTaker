@@ -1,18 +1,139 @@
 @page "/D/{LinkCode}"
 @page "/D/{LinkCode}/{SurveyIdText}"
+@using System.Text.RegularExpressions
+@inject SpeakupDb Speakup
+@inject SurveyBankDb SurveyBank
+@inject OpenCheck Open
+@inject SurveyStarter Starter
+@inject SurveyLog Log
 @inject NavigationManager Nav
-@inject IOptions<SurveyOptions> Options
 
-@* District links need the school picker (GetInstInDistrict), which isn't built yet. Until it is,
-   send them to the legacy site unchanged. *@
+@* District short link: /D/{district link code}[/{survey id}]. Replaces legacy D.aspx + DistrictStart.aspx.
+   Steps (all state in the URL, nothing in session):
+     1. pick your school            -> ?school={registration id}
+     2. pick type + survey (only if the link has no survey id) -> /D/{code}/{survey}?school=...
+     3. confirm, then start *@
+
+@if (_problemTitle is not null)
+{
+    <Notice Title="@_problemTitle"><p>@((MarkupString)(_problemText ?? ""))</p></Notice>
+}
+else if (_district is not null && _school is null)
+{
+    <PageTitle>Speak Up – @_district.OrgName</PageTitle>
+    <h1 class="h3 mb-1">@_district.OrgName</h1>
+    @if (_activeSurvey is not null) { <p class="text-body-secondary mb-4">@_activeSurvey.Name</p> }
+    <form method="get" class="question">
+        <label for="school" class="q-text d-block">Select your school</label>
+        @if (_schoolError) { <p class="error-text">Please choose your school from the list.</p> }
+        <select id="school" name="school" class="form-select mb-3" required>
+            <option value="">Select your school</option>
+            @foreach (var s in _schools)
+            {
+                <option value="@s.RegistrationId">@s.RegistrantName</option>
+            }
+        </select>
+        <button type="submit" class="btn btn-primary">Continue</button>
+    </form>
+    <SiteFooter Full="true" />
+}
+else if (_district is not null && _school is not null && _activeSurvey is null)
+{
+    <PageTitle>Speak Up – @_school.RegistrantName</PageTitle>
+    <h1 class="h3 mb-1">@_school.RegistrantName</h1>
+    <p class="text-body-secondary mb-4">@_district.OrgName &middot; <a href="@($"D/{Code}")">change school</a></p>
+    <SurveyPicker OrganizationId="_district.OrganizationId" SelectedType="@Type" ExcludeGroupSurveys="false"
+                  TypeUrl="TypeUrl" SurveyUrl="SurveyUrl" />
+    <SiteFooter Full="true" />
+}
+else if (_district is not null && _school is not null && _activeSurvey is not null)
+{
+    <PageTitle>@_activeSurvey.Name</PageTitle>
+    <div lang="@(_es ? "es" : "en")">
+        <h1 class="h3 mb-3">@_activeSurvey.Name</h1>
+        <p>@T("ConfirmPrompt")</p>
+        <dl class="intro-text row mb-4 mx-0">
+            <dt class="col-sm-3">@T("District")</dt><dd class="col-sm-9">@_district.OrgName</dd>
+            <dt class="col-sm-3">@T("School")</dt><dd class="col-sm-9">@_school.RegistrantName</dd>
+            <dt class="col-sm-3">@T("Survey")</dt><dd class="col-sm-9 mb-0">@_activeSurvey.Name</dd>
+        </dl>
+        <form method="post" @formname="start" @onsubmit="StartAsync">
+            <AntiforgeryToken />
+            <button type="submit" class="btn btn-primary btn-lg">@T("Start")</button>
+        </form>
+        <p class="mt-3 small"><a href="@($"D/{Code}{(SurveyIdText is null ? "" : "/" + SurveyIdText)}")">Not your school? Choose again</a></p>
+    </div>
+    <SiteFooter Full="true" />
+}
 
 @code {
     [Parameter] public string LinkCode { get; set; } = "";
     [Parameter] public string? SurveyIdText { get; set; }
+    [SupplyParameterFromQuery(Name = "school")] public string? SchoolText { get; set; }
+    [SupplyParameterFromQuery(Name = "type")] public string? Type { get; set; }
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
 
-    protected override void OnInitialized()
+    private OrganizationInfo? _district;
+    private IReadOnlyList<SchoolItem> _schools = [];
+    private SchoolItem? _school;
+    private ActiveSurvey? _activeSurvey;
+    private bool _schoolError, _es;
+    private string? _problemTitle, _problemText;
+    private string T(string id) => Texts.Get(id, _es);
+
+    private static readonly Regex CodePattern = new("^[A-Za-z0-9]{1,10}$");
+    private string Code => Uri.EscapeDataString(LinkCode);
+    private string SchoolQuery => $"school={_school!.RegistrationId}";
+    private string TypeUrl(string? type) => $"D/{Code}?{SchoolQuery}" + (type is null ? "" : $"&type={Uri.EscapeDataString(type)}");
+    private string SurveyUrl(int surveyId) => $"D/{Code}/{surveyId}?{SchoolQuery}";
+
+    protected override async Task OnInitializedAsync()
     {
-        var path = "/D/" + Uri.EscapeDataString(LinkCode) + (SurveyIdText is null ? "" : "/" + Uri.EscapeDataString(SurveyIdText));
-        Nav.NavigateTo(Options.Value.LegacyBaseUrl.TrimEnd('/') + path);
+        var site = await Open.SiteAsync();
+        if (!site.IsOpen) { Problem(ClosedMessages.For(site)); return; }
+
+        if (!CodePattern.IsMatch(LinkCode) || (_district = await Speakup.GetOrganizationByLinkCodeAsync(LinkCode)) is null)
+        {
+            await Log.Error("DistrictStart", "ValidateDistCode", "LinkCode", LinkCode, "District link code not found");
+            Problem(ClosedMessages.BadLink("district"));
+            return;
+        }
+
+        var districtOpen = await Open.DistrictAsync(_district.OrganizationId);
+        if (!districtOpen.IsOpen) { Problem(ClosedMessages.For(districtOpen)); return; }
+
+        // A survey id in the link is checked up front, so a bad link fails before the school picker.
+        if (!string.IsNullOrEmpty(SurveyIdText))
+        {
+            if (!int.TryParse(SurveyIdText, out var surveyId) || (_activeSurvey = await SurveyBank.ChkSurveyIdAsync(surveyId)) is null)
+            {
+                await Log.Error("DistrictStart", "ValidateSurveyId", "SurveyId", SurveyIdText, $"Survey not found or not active (link code {LinkCode})");
+                Problem(ClosedMessages.SurveyNotAvailable());
+                return;
+            }
+            _es = Texts.IsSpanish(_activeSurvey.SurveyType);
+        }
+
+        _schools = await Speakup.GetSchoolsForSurveyAsync(_district.OrganizationId);
+        if (SchoolText is not null)
+        {
+            // The school must belong to this district.
+            _school = int.TryParse(SchoolText, out var regId) ? _schools.FirstOrDefault(s => s.RegistrationId == regId) : null;
+            _schoolError = _school is null;
+        }
+        else if (!HttpMethods.IsPost(HttpContext.Request.Method))
+        {
+            try { await Speakup.LogEntryPointAsync("DISTRICTSTART", orgLinkCode: LinkCode); }
+            catch (Exception ex) { await Log.Error("DistrictStart", "LogEntryPoint", "LinkCode", LinkCode, ex.Message); }
+        }
     }
+
+    private async Task StartAsync()
+    {
+        if (_district is null || _school is null || _activeSurvey is null || !int.TryParse(SurveyIdText, out var surveyId))
+            return;
+        Nav.NavigateTo(await Starter.StartAsync(HttpContext, _district.OrganizationId, _school.RegistrationId, surveyId, "DistrictStart"));
+    }
+
+    private void Problem((string Title, string Html) p) { _problemTitle = p.Title; _problemText = p.Html; }
 }
