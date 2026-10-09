@@ -30,20 +30,21 @@ public sealed class SpeakupDb(SqlConnections connections)
         return await cn.QueryFirstOrDefaultAsync<DistrictOpenClose>(Proc("GetDistrictOpenClose", new { orgid = organizationId }, ct));
     }
 
-    /// <summary>GetOrganizationInfo by district link code (first result set only). Used by /D/ links.</summary>
+    // District lookups use GetOrganizationForSurvey (added for SurveyTaker, db/Speakup/procs/), not the legacy
+    // GetOrganizationInfo: that one returns o.* including plain-text passwords, and needs the Institution DB.
+
+    /// <summary>District by link code. Used by /D/ links.</summary>
     public async Task<OrganizationInfo?> GetOrganizationByLinkCodeAsync(string linkCode, CancellationToken ct = default)
     {
         await using var cn = await connections.OpenSpeakupAsync(ct);
-        await using var grid = await cn.QueryMultipleAsync(Proc("GetOrganizationInfo", new { linkcode = linkCode }, ct));
-        return await grid.ReadFirstOrDefaultAsync<OrganizationInfo>();
+        return await cn.QueryFirstOrDefaultAsync<OrganizationInfo>(Proc("GetOrganizationForSurvey", new { linkcode = linkCode }, ct));
     }
 
-    /// <summary>GetOrganizationInfo by organization ID (first result set only). Used by /S/ links after the school lookup.</summary>
+    /// <summary>District by organization ID. Used by /S/ links after the school lookup.</summary>
     public async Task<OrganizationInfo?> GetOrganizationByIdAsync(int organizationId, CancellationToken ct = default)
     {
         await using var cn = await connections.OpenSpeakupAsync(ct);
-        await using var grid = await cn.QueryMultipleAsync(Proc("GetOrganizationInfo", new { orgid = organizationId }, ct));
-        return await grid.ReadFirstOrDefaultAsync<OrganizationInfo>();
+        return await cn.QueryFirstOrDefaultAsync<OrganizationInfo>(Proc("GetOrganizationForSurvey", new { orgid = organizationId }, ct));
     }
 
     /// <summary>
