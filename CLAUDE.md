@@ -16,6 +16,10 @@ Don't rewrite source files with Windows PowerShell 5.1 `Get-Content`/`Set-Conten
 
 Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run: `dotnet run --project src/SurveyTaker.Web`.
 
+## Scope (Bob, 2026-10-08)
+
+**speakup.tomorrow.org = SurveyTaker = everything about taking a survey**: the /S/, /D/ and /Q/ short links, start pages, intro, questions, completion. **speakup2026.tomorrow.org becomes the report/admin portal**, and survey taking moves out of it. So SurveyTaker must NOT hand survey traffic back to speakup2026. The current hand-offs (/S/ without a survey id, all /D/ links) are temporary and must be replaced before go-live by: survey-type/survey pickers (/S/ without a survey id), the school picker (/D/), and /Q/ quick start (survey 195 in 2025-26). Open: whether SIDstart, LookupBuilding and Register come over too.
+
 ## Rules
 
 - **Stateless**: no session; every request rebuilds from the DB via taken-survey ID (TSI). One form POST per page. Azure-ready: config/env settings, no local disk writes, no Windows-only APIs.
