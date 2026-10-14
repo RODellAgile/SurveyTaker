@@ -176,8 +176,11 @@ a:hover { color: var(--color-primary-hover); }
 /* Footer */
 .site-footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--color-border); color: var(--color-text-muted); font-size: .9rem; text-align: center; }
 .sponsor-heading { margin-bottom: .5rem; }
-.sponsor-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; }
-.sponsor img { max-height: 48px; }
+.sponsor-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; }
+/* Each logo on a white tile, like the Project Tomorrow logo, so brand colors read the same in dark mode. */
+.sponsor img { display: block; height: 36px; width: auto; max-width: 140px; object-fit: contain; }
+.sponsor:has(img) { display: flex; align-items: center; justify-content: center; background: #FFFFFF;
+    border: 1px solid #E3E6EB; border-radius: 8px; padding: 10px 14px; }
 .sponsor-placeholder { display: inline-block; padding: .75rem 1.25rem; border: 1px dashed var(--color-control-border); border-radius: 6px; }
 
 .intro-text { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; padding: 1.25rem; }

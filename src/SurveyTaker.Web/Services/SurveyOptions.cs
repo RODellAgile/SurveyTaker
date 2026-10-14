@@ -46,7 +46,8 @@ public sealed class SurveyOptions
     public int QuickStartOrganizationId { get; set; } = 73021;
     public int QuickStartRegistrationId { get; set; } = 252487;
 
-    /// <summary>Sponsor slots for the footers. Placeholders until logos arrive.</summary>
+    /// <summary>Sponsors shown in the full footer, in order. Logos live in wwwroot/img/sponsors; a sponsor without
+    /// a LogoUrl shows as a text placeholder. Change the list each season in settings, no code change.</summary>
     public List<Sponsor> Sponsors { get; set; } = [];
 }
 
