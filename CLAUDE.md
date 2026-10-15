@@ -34,7 +34,7 @@ Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run
 ## 2026-10-14
 
 - Sponsor logos added to the full footer (intro, start, completion pages; not question pages, per the team's spec): AgileED, ClassDojo, Edmentum, edWeb.net, PowerSchool. Files in `wwwroot/img/sponsors` (PowerSchool SVG cropped to its drawing, checked for scripts); list and order in `Survey:Sponsors` settings. Each logo sits on a white tile for dark mode.
-- **Update package `publish/update-2026-10-14`** (no web.config, no appsettings.Development.json) replaces update-2026-10-09: it contains the 10-09 changes (logo, completion page, theme) plus the sponsors. **Built, NOT deployed.**
+- **Update package `publish/update-2026-10-14`** (no web.config, no appsettings.Development.json) replaces update-2026-10-09: it contains the 10-09 changes (logo, completion page, theme) plus the sponsors. **Deployed by Bob 2026-10-15** (team had approved the 10-09 release; the logos were their main issue). Sam checking.
 - Local preview: launch.json "surveytaker" now uses the publish folder as content root (the source folder as content root served empty static files).
 
 ## 2026-10-09
@@ -47,7 +47,7 @@ Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run
 - **Live on speakup.tomorrow.org** (IIS site/pool "Speakup", No Managed Code, F:\inetpub\Speakup). Bob ran the smoke tests; Michelle and Sam test on 2026-10-09.
 - Production DB: GetOrganizationForSurvey + GetSchoolsForSurvey created; login speakup_surveytaker created. Settings live in the server's web.config environment variables (not in git; built from `publish/`, which is gitignored).
 - Follow-ups: change the speakup_surveytaker password if not done (it appeared in the session log); set stdoutLogEnabled="false"; clean up test rows (UseSurvey=0 or purge); SurveyBank titles still say "Speakup 2025"; Lawrence County (org 34245) admin password exposed in a session log, so reset it.
-- To redeploy: `dotnet publish src/SurveyTaker.Web -c Release -o publish/SurveyTaker`, then copy everything EXCEPT web.config (the server's has the secrets) and appsettings.Development.json.
+- To redeploy: `dotnet publish src/SurveyTaker.Web -c Release -o publish/SurveyTaker`, then copy everything EXCEPT web.config (the server's has the secrets) and appsettings.Development.json. **Stop the "Speakup" app pool first** (only that pool), copy, then start it: app_offline.htm alone left a file locked (Bob, 2026-10-15).
 
 ## Status (2026-10-08, evening)
 
