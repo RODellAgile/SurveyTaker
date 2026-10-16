@@ -31,6 +31,10 @@ Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run
 - Fix "Other" detection (starts-with, not exact match). Group surveys: `surveys.GroupSurvey = 1` → ask respondent count first (`UpdateK2GrpCnt`), each integer answer ≤ `k2grpcnt` server-side; the old 6/55/110/471 exact-sum check is deprecated (see db/README.md). English + Spanish via resource files. WCAG 2.2 AA, mobile-first, branding tokens per handoff §3.
 - UI – **[DECIDED 2026-10-08]**: Agile-Ed team uses Blazor Server + Telerik UI for Blazor + Bootstrap. SurveyTaker uses **Bootstrap + plain HTML form controls**, Project Tomorrow tokens layered on Bootstrap variables, **no Telerik** (survey inputs don't need it; most Telerik Blazor components require interactivity). Stays **static SSR**, not Server mode (phones on flaky networks; stateless rule). Server mode + Telerik are fine for the later admin site.
 
+## 2026-10-15
+
+- Pinned `System.Security.Cryptography.Pkcs` 10.0.13: Microsoft.Data.SqlClient 7.1.1 pulled 9.0.18, which has a high-severity advisory. That code reads signed CMS data, which SurveyTaker never does, so low real risk. **Package `publish/update-2026-10-15`** (no web.config/appsettings.Development.json) is built and NOT deployed; it's the deployed 10-14 build plus this fix. Deploy when convenient (stop the Speakup pool, copy, start).
+
 ## 2026-10-14
 
 - Sponsor logos added to the full footer (intro, start, completion pages; not question pages, per the team's spec): AgileED, ClassDojo, Edmentum, edWeb.net, PowerSchool. Files in `wwwroot/img/sponsors` (PowerSchool SVG cropped to its drawing, checked for scripts); list and order in `Survey:Sponsors` settings. Each logo sits on a white tile for dark mode.
