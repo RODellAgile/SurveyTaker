@@ -33,7 +33,9 @@ Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run
 
 ## 2026-10-18
 
-- **Go-live:** Bob is confirming by email. **Late this week, or more likely late next week (~Oct 29–30).** Bob is in Denver Oct 25–28 and the team won't go live without him.
+- **Go-live: Bob proposed Thursday 2026-10-29** (email to the team 10-18; waiting on confirmation). Bob is in Denver Oct 25–28.
+  - **By Sat 10-24 (before Denver):** rotate the LinkKey and the SQL password; `stdoutLogEnabled="false"`.
+  - **Morning of 10-29, before announcing:** `db/pre-golive-cleanup.sql`, keeping the real districts.
 - **Team text:** none received. The approved release can go live without it; text can follow as an update.
 - **Day before go-live (prepare beforehand):**
   - Script to preview, then delete, test `users_surveys` rows (keep the out-of-season district's).
