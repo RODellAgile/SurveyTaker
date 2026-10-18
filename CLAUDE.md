@@ -40,7 +40,7 @@ Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run
   - Rotate `Survey:LinkKey` (it appeared in a session log).
   - Rotate the `speakup_surveytaker` SQL password.
   - `stdoutLogEnabled="false"`.
-- Bob deploying `update-2026-10-15` (Pkcs pin).
+- `update-2026-10-15` (Pkcs pin) **deployed and tested by Bob 2026-10-18** (test takes under org 25669, links /D/9M3Q, /S/DF36). Go-live email sent to the team the same day.
 
 ## 2026-10-15
 
