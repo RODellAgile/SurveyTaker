@@ -31,6 +31,17 @@ Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run
 - Fix "Other" detection (starts-with, not exact match). Group surveys: `surveys.GroupSurvey = 1` → ask respondent count first (`UpdateK2GrpCnt`), each integer answer ≤ `k2grpcnt` server-side; the old 6/55/110/471 exact-sum check is deprecated (see db/README.md). English + Spanish via resource files. WCAG 2.2 AA, mobile-first, branding tokens per handoff §3.
 - UI – **[DECIDED 2026-10-08]**: Agile-Ed team uses Blazor Server + Telerik UI for Blazor + Bootstrap. SurveyTaker uses **Bootstrap + plain HTML form controls**, Project Tomorrow tokens layered on Bootstrap variables, **no Telerik** (survey inputs don't need it; most Telerik Blazor components require interactivity). Stays **static SSR**, not Server mode (phones on flaky networks; stateless rule). Server mode + Telerik are fine for the later admin site.
 
+## 2026-10-18
+
+- **Go-live:** Bob is confirming by email. **Late this week, or more likely late next week (~Oct 29–30).** Bob is in Denver Oct 25–28 and the team won't go live without him.
+- **Team text:** none received. The approved release can go live without it; text can follow as an update.
+- **Day before go-live (prepare beforehand):**
+  - Script to preview, then delete, test `users_surveys` rows (keep the out-of-season district's).
+  - Rotate `Survey:LinkKey` (it appeared in a session log).
+  - Rotate the `speakup_surveytaker` SQL password.
+  - `stdoutLogEnabled="false"`.
+- Bob deploying `update-2026-10-15` (Pkcs pin).
+
 ## 2026-10-15
 
 - Pinned `System.Security.Cryptography.Pkcs` 10.0.13: Microsoft.Data.SqlClient 7.1.1 pulled 9.0.18, which has a high-severity advisory. That code reads signed CMS data, which SurveyTaker never does, so low real risk. **Package `publish/update-2026-10-15`** (no web.config/appsettings.Development.json) is built and NOT deployed; it's the deployed 10-14 build plus this fix. Deploy when convenient (stop the Speakup pool, copy, start).
