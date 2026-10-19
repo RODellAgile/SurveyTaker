@@ -149,7 +149,9 @@ a:hover { color: var(--color-primary-hover); }
 /* Cards and questions */
 .card { border-color: var(--color-border); }
 .question { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
-.question legend, .question .q-text { font-size: 1.125rem; font-weight: 600; margin-bottom: .75rem; float: none; width: auto; }
+/* The legend must float (Bootstrap's reboot), or browsers draw it across the fieldset's top border, half outside the box. */
+.question legend, .question .q-text { font-size: 1.125rem; font-weight: 600; margin-bottom: .75rem; float: left; width: 100%; padding: 0; }
+.question legend + * { clear: left; }
 .question.has-error { border-color: var(--color-error); }
 .error-text { color: var(--color-error); font-weight: 600; margin-bottom: .5rem; }
 .progress-text { color: var(--color-text-muted); font-size: .95rem; }
