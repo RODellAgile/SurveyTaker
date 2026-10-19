@@ -28,10 +28,19 @@ public class AnswerFormTests
     private static AnswerForm.Result Read(SurveyContext ctx, Dictionary<string, string[]> form, bool enforceRequired = true) =>
         AnswerForm.Read(ctx, ctx.ItemsOnPage(1), name => form.GetValueOrDefault(name, []), enforceRequired);
 
+    // "Other" text counts only when Other is marked (Speak Up team, 2026-10-19).
+
     [Fact]
-    public void CheckboxOther_TypedTextWithoutTick_SavesOther()
+    public void CheckboxOther_TextWithoutTick_IsIgnored()
     {
         var r = Read(Ctx(Q("checkboxother"), YesNoOther), new() { ["q7"] = ["1"], ["o7"] = ["  my answer "] });
+        Assert.Equal([new Answer(7, 1, null)], r.Answers);
+    }
+
+    [Fact]
+    public void CheckboxOther_TickedWithText_SavesItAlongsideOtherChoices()
+    {
+        var r = Read(Ctx(Q("checkboxother"), YesNoOther), new() { ["q7"] = ["1", "3"], ["o7"] = ["  my answer "] });
         Assert.Equal([new Answer(7, 1, null), new Answer(7, 3, "my answer")], r.Answers);
     }
 
@@ -43,10 +52,32 @@ public class AnswerFormTests
     }
 
     [Fact]
-    public void RadioOther_TypedTextWinsOverSelectedRadio()
+    public void RadioOther_AnotherChoice_DropsOtherText()
     {
         var r = Read(Ctx(Q("radioother"), YesNoOther), new() { ["q7"] = ["1"], ["o7"] = ["something else"] });
+        Assert.Equal([new Answer(7, 1, null)], r.Answers);
+    }
+
+    [Fact]
+    public void RadioOther_OtherChosen_SavesTheText()
+    {
+        var r = Read(Ctx(Q("radioother"), YesNoOther), new() { ["q7"] = ["3"], ["o7"] = [" something else "] });
         Assert.Equal([new Answer(7, 3, "something else")], r.Answers);
+    }
+
+    [Fact]
+    public void RadioOther_TextButNothingChosen_SavesNothing()
+    {
+        var r = Read(Ctx(Q("radioother", required: true), YesNoOther), new() { ["o7"] = ["something else"] });
+        Assert.Empty(r.Answers);
+        Assert.True(r.Errors.ContainsKey(7));   // required: asks for an answer
+    }
+
+    [Fact]
+    public void RadioOther_OnlyOneAnswer_EvenIfTampered()
+    {
+        var r = Read(Ctx(Q("radioother"), YesNoOther), new() { ["q7"] = ["3", "1"], ["o7"] = ["x"] });
+        Assert.Equal([new Answer(7, 3, "x")], r.Answers);
     }
 
     [Fact]

@@ -145,6 +145,12 @@ a:hover { color: var(--color-primary-hover); }
     border-radius: 6px; background: var(--color-surface); cursor: pointer; position: relative; }
 .choice .form-check-input { position: absolute; left: .8rem; top: .7rem; margin: 0; }
 .choice:has(input:checked) { background: var(--color-selected-bg); border-color: var(--color-primary); }
+/* "Other" text box: only while Other is marked (Speak Up team, 2026-10-19). No JavaScript; the server also ignores the
+   text unless Other is marked. Browsers without :has() (very old) just show the box. */
+@supports selector(:has(*)) {
+    .other-text { display: none; }
+    .choice:has(input:checked) + .other-text { display: block; }
+}
 
 /* Cards and questions */
 .card { border-color: var(--color-border); }

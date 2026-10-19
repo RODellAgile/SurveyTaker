@@ -33,8 +33,8 @@ What the new app must reproduce so its rows match the old app's:
 - **Paging:** `SurveyRules.AssignPages` — ranges of Question_Sort, not question counts (ported exactly).
 - **Saving a page:** for every question on the page `DeleteQuestion`, then `SaveAnswer` per row. Empty OptionId/OptionValue are sent as NULL.
   - checkbox/radio/likert/likertgrid/grid: one row per selected option, value NULL.
-  - checkboxother: Other saved when ticked **or** text typed (value = trimmed text, NULL if empty); other selections value NULL.
-  - radioother: typed Other text wins over the selected radio (only the Other row is saved); else the selected radio.
+  - checkboxother: the ticked options are saved; Other text is kept only when Other is ticked (value = trimmed text, NULL if empty), otherwise dropped. Other selections value NULL. (Speak Up team, 2026-10-19; was: Other saved when ticked or text typed.)
+  - radioother: the selected radio only; Other text is saved only when Other is the selected radio, otherwise dropped. (Speak Up team, 2026-10-19; was: typed Other text wins over the selected radio.) The Other text box shows only while Other is marked (CSS, no JavaScript).
   - Other option = `SurveyRules.FindOtherOptionId` (starts with OTHER/OTR, last match wins — the interim fix of 2026-09-27).
   - integer: one row **per option, even blank** (value NULL when blank); legacy saved the untrimmed text unvalidated.
   - text: one row with OptionId NULL and the (untrimmed) text — **even when blank** (both NULL).

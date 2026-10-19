@@ -168,7 +168,8 @@ else if (Ctx is not null)
                         </label>
                         @if (o.OptionId == otherId)
                         {
-                            <input type="text" class="form-control mb-2" name="@AnswerForm.Other(qid)" maxlength="2000"
+                            @* Shown only while Other is marked (app.css); the server ignores it otherwise. *@
+                            <input type="text" class="form-control mb-2 other-text" name="@AnswerForm.Other(qid)" maxlength="2000"
                                    aria-label="@T("Other")" placeholder="@T("Other")" value="@ValueOf(qid, o.OptionId)" />
                         }
                     }

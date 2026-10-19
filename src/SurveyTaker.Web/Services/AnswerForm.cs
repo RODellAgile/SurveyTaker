@@ -47,13 +47,11 @@ public static class AnswerForm
                 }
                 case "radioother":
                 {
-                    // Typed Other text wins over the selected radio (legacy behavior).
-                    var otherText = Trimmed(form(Other(qid)));
+                    // One answer. Other text counts only when Other itself is the selected radio; with any other choice
+                    // the text is dropped (Speak Up team, 2026-10-19; replaces the legacy "typed text wins").
                     var otherId = SurveyRules.FindOtherOptionId(options);
-                    if (otherText.Length > 0 && otherId is int oid)
-                        answers.Add(new Answer(qid, oid, otherText));
-                    else if (FirstInt(form(Select(qid))) is int sel && options.Any(o => o.OptionId == sel))
-                        answers.Add(new Answer(qid, sel, null));
+                    if (FirstInt(form(Select(qid))) is int sel && options.Any(o => o.OptionId == sel))
+                        answers.Add(new Answer(qid, sel, sel == otherId ? NullIfEmpty(Trimmed(form(Other(qid)))) : null));
                     break;
                 }
                 case "checkbox" or "likertgrid" or "grid":
@@ -71,14 +69,9 @@ public static class AnswerForm
                     var selected = Ints(form(Select(qid)));
                     var otherText = Trimmed(form(Other(qid)));
                     var otherId = SurveyRules.FindOtherOptionId(options);
-                    foreach (var o in options)
-                    {
-                        // Other counts when ticked OR when text was typed — the fix for lost "Other" answers.
-                        if (o.OptionId == otherId && (selected.Contains(o.OptionId) || otherText.Length > 0))
-                            answers.Add(new Answer(qid, o.OptionId, NullIfEmpty(otherText)));
-                        else if (selected.Contains(o.OptionId))
-                            answers.Add(new Answer(qid, o.OptionId, null));
-                    }
+                    // Any number of choices. Other text is kept only when Other is ticked (Speak Up team, 2026-10-19).
+                    foreach (var o in options.Where(o => selected.Contains(o.OptionId)))
+                        answers.Add(new Answer(qid, o.OptionId, o.OptionId == otherId ? NullIfEmpty(otherText) : null));
                     break;
                 }
                 case "integer":
