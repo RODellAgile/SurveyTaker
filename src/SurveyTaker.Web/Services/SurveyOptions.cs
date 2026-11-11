@@ -46,6 +46,16 @@ public sealed class SurveyOptions
     public int QuickStartOrganizationId { get; set; } = 73021;
     public int QuickStartRegistrationId { get; set; } = 252487;
 
+    /// <summary>
+    /// Development surveys (SpeakupAdmin Survey Building): off until the cutover (it needs SurveyBank surveys.Status and
+    /// the MarkTestSurveyTake proc). When on, the test organization can see and take Development surveys, and those
+    /// takes are marked UseSurvey = 0. Everyone else sees only Active surveys, as before.
+    /// </summary>
+    public bool DevelopmentSurveys { get; set; }
+
+    /// <summary>The organization that may take Development surveys (25669 "Project Tomorrow – organization level").</summary>
+    public int TestOrganizationId { get; set; } = 25669;
+
     /// <summary>Sponsors shown in the full footer, in order. Logos live in wwwroot/img/sponsors; a sponsor without
     /// a LogoUrl shows as a text placeholder. Change the list each season in settings, no code change.</summary>
     public List<Sponsor> Sponsors { get; set; } = [];

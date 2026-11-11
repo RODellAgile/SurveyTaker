@@ -1,4 +1,5 @@
 @inject SpeakupDb Speakup
+@inject SurveyAccess Access
 @inject IOptions<SurveyOptions> Options
 
 @* Survey-type list, then the surveys of the chosen type, for a district (legacy ShowSurveyTypes/ShowSurveyList).
@@ -44,6 +45,19 @@ else if (_types is not null)
     }
 }
 
+@if (_development.Count > 0 && _surveys is null)
+{
+    @* Test organization only (SurveyAccess): Development surveys from Survey Building, to try before they go Active. *@
+    <h2 class="h6 mt-4">Development surveys (testing)</h2>
+    <p class="small text-body-secondary">Only the test organization sees these. Takes are test data and never count in results.</p>
+    <div class="list-group mb-3">
+        @foreach (var s in _development)
+        {
+            <a class="list-group-item list-group-item-action py-2" href="@SurveyUrl(s.SurveyId)">@s.Name <span class="small text-body-secondary">(@s.SurveyType)</span></a>
+        }
+    </div>
+}
+
 @code {
     /// <summary>District whose surveys are offered (for /S/ links, the school's district).</summary>
     [Parameter, EditorRequired] public int OrganizationId { get; set; }
@@ -59,12 +73,14 @@ else if (_types is not null)
 
     private IReadOnlyList<SurveyTypeItem>? _types;
     private List<SurveyListItem>? _surveys;
+    private IReadOnlyList<DevelopmentSurvey> _development = [];
     private string? _typeName;
 
     protected override async Task OnInitializedAsync()
     {
         var deck = Options.Value.DefaultDeck;
         _types = await Speakup.GetSurveyTypesAsync(OrganizationId, deck);
+        _development = await Access.DevelopmentSurveysAsync(OrganizationId);
 
         // A single type: skip straight to its surveys.
         var type = !string.IsNullOrEmpty(SelectedType) ? SelectedType : _types.Count == 1 ? _types[0].SurveyType : null;

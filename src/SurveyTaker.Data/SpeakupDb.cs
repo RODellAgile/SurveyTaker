@@ -212,6 +212,13 @@ public sealed class SpeakupDb(SqlConnections connections)
         await cn.ExecuteAsync(Proc("MarkSurveyCompleted", new { takensurveyid = takenSurveyId, quescompleted = quesCompleted }, ct));
     }
 
+    /// <summary>MarkTestSurveyTake (added for SurveyTaker): UseSurvey = 0 on a test organization's Development take. Returns rows marked.</summary>
+    public async Task<int> MarkTestSurveyTakeAsync(int takenSurveyId, int organizationId, CancellationToken ct = default)
+    {
+        await using var cn = await connections.OpenSpeakupAsync(ct);
+        return await cn.ExecuteScalarAsync<int>(Proc("MarkTestSurveyTake", new { takensurveyid = takenSurveyId, organizationid = organizationId }, ct));
+    }
+
     private static CommandDefinition Proc(string name, object? args, CancellationToken ct, IDbTransaction? tx = null) =>
         new(name, args, transaction: tx, commandType: CommandType.StoredProcedure, cancellationToken: ct);
 }

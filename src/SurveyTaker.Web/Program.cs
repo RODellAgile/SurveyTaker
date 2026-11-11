@@ -21,6 +21,7 @@ builder.Services.AddSingleton<OpenCheck>();
 builder.Services.AddSingleton<SurveyLoader>();
 builder.Services.AddSingleton<SurveyLog>();
 builder.Services.AddSingleton<SurveyStarter>();
+builder.Services.AddSingleton<SurveyAccess>();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
 

@@ -56,6 +56,9 @@ GRANT EXECUTE ON dbo.DeleteQuestion           TO speakup_surveytaker;
 GRANT EXECUTE ON dbo.SaveAnswer               TO speakup_surveytaker;
 GRANT EXECUTE ON dbo.UpdateSurveyProgress     TO speakup_surveytaker;
 GRANT EXECUTE ON dbo.MarkSurveyCompleted      TO speakup_surveytaker;
+-- Survey Building cutover: test takes of Development surveys (create db/Speakup/procs/MarkTestSurveyTake.sql first).
+IF OBJECT_ID(N''dbo.MarkTestSurveyTake'') IS NOT NULL
+    GRANT EXECUTE ON dbo.MarkTestSurveyTake   TO speakup_surveytaker;
 
 -- School link lookup (SpeakupDb.GetRegistrationByLinkCodeAsync). Column-level: no password columns.
 GRANT SELECT ON dbo.Registrations (LinkCode, Organization_Id, Registration_Id, RegistrantName, MailState) TO speakup_surveytaker;

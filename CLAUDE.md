@@ -31,6 +31,14 @@ Build/test: `dotnet build SurveyTaker.slnx`, `dotnet test SurveyTaker.slnx`. Run
 - Fix "Other" detection (starts-with, not exact match). Group surveys: `surveys.GroupSurvey = 1` → ask respondent count first (`UpdateK2GrpCnt`), each integer answer ≤ `k2grpcnt` server-side; the old 6/55/110/471 exact-sum check is deprecated (see db/README.md). English + Spanish via resource files. WCAG 2.2 AA, mobile-first, branding tokens per handoff §3.
 - UI – **[DECIDED 2026-10-08]**: Agile-Ed team uses Blazor Server + Telerik UI for Blazor + Bootstrap. SurveyTaker uses **Bootstrap + plain HTML form controls**, Project Tomorrow tokens layered on Bootstrap variables, **no Telerik** (survey inputs don't need it; most Telerik Blazor components require interactivity). Stays **static SSR**, not Server mode (phones on flaky networks; stateless rule). Server mode + Telerik are fine for the later admin site.
 
+## 2026-11-11: Development surveys (for SpeakupAdmin Survey Building; off until the cutover)
+
+- **Setting `Survey:DevelopmentSurveys`** (false in production until the SurveyBank cutover; true in appsettings.Development.json) and `Survey:TestOrganizationId` (25669).
+- **When on:** the test organization sees a "Development surveys (testing)" list in its survey picker and can start Development surveys (SurveyBank `surveys.Status = 'D'`), including SpeakupAdmin's "Try it as the test organization" link (`/D/9M3Q/{survey}`). Everyone else, and every other link, still gets Active surveys only (ChkSurveyId); QuickStart stays Active-only. Rule in `Services/SurveyAccess.cs`. Confirm page shows a "test only" note.
+- **Test takes don't count:** right after StartNewSurvey, a Development take is marked `UseSurvey = 0` by the new proc **`MarkTestSurveyTake`** (`db/Speakup/procs/`; only rows of the given organization). Development surveys are archived (archive = 1), so the nightly summary skips them anyway; the mark keeps test takes out after the survey goes Active.
+- **At cutover (production):** run `db/Speakup/procs/MarkTestSurveyTake.sql` in the season DB, re-run `db/create-surveytaker-login.sql` (it grants EXECUTE only if the proc exists), set `Survey__DevelopmentSurveys=true` in the server's web.config environment variables, redeploy. Needs SpeakupAdmin's `surveybank-status-and-audit.sql` first (the Status column).
+- Tests: 3 new (`DevelopmentSurveyTests`), 39 pass. Browser-checked locally: test org picker + start (take marked UseSurvey 0), another district refused, other districts' pickers unchanged.
+
 ## 2026-10-18
 
 - **Go-live: Bob proposed Thursday 2026-10-29** (email to the team 10-18). The team asked for 10-27; Bob declined (he is in Denver Oct 25–28). Waiting on their confirmation.

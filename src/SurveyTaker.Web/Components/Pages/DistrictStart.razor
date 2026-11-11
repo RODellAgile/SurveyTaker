@@ -2,7 +2,7 @@
 @page "/D/{LinkCode}/{SurveyIdText}"
 @using System.Text.RegularExpressions
 @inject SpeakupDb Speakup
-@inject SurveyBankDb SurveyBank
+@inject SurveyAccess Access
 @inject OpenCheck Open
 @inject SurveyStarter Starter
 @inject SurveyLog Log
@@ -57,6 +57,7 @@ else if (_district is not null && _school is not null && _activeSurvey is not nu
             <dt class="col-sm-3">@T("School")</dt><dd class="col-sm-9">@_school.RegistrantName</dd>
             <dt class="col-sm-3">@T("Survey")</dt><dd class="col-sm-9 mb-0">@_activeSurvey.Name</dd>
         </dl>
+        @if (_activeSurvey.IsDevelopment) { <p class="alert alert-warning py-2 small">Development survey (testing): only the test organization can take it, and this take won't count in results.</p> }
         <form method="post" @formname="start" @onsubmit="StartAsync">
             <AntiforgeryToken />
             <button type="submit" class="btn btn-primary btn-lg">@T("Start")</button>
@@ -105,7 +106,7 @@ else if (_district is not null && _school is not null && _activeSurvey is not nu
         // A survey id in the link is checked up front, so a bad link fails before the school picker.
         if (!string.IsNullOrEmpty(SurveyIdText))
         {
-            if (!int.TryParse(SurveyIdText, out var surveyId) || (_activeSurvey = await SurveyBank.ChkSurveyIdAsync(surveyId)) is null)
+            if (!int.TryParse(SurveyIdText, out var surveyId) || (_activeSurvey = await Access.FindStartableAsync(surveyId, _district.OrganizationId)) is null)
             {
                 await Log.Error("DistrictStart", "ValidateSurveyId", "SurveyId", SurveyIdText, $"Survey not found or not active (link code {LinkCode})");
                 Problem(ClosedMessages.SurveyNotAvailable());
@@ -132,7 +133,7 @@ else if (_district is not null && _school is not null && _activeSurvey is not nu
     {
         if (_district is null || _school is null || _activeSurvey is null || !int.TryParse(SurveyIdText, out var surveyId))
             return;
-        Nav.NavigateTo(await Starter.StartAsync(HttpContext, _district.OrganizationId, _school.RegistrationId, surveyId, "DistrictStart"));
+        Nav.NavigateTo(await Starter.StartAsync(HttpContext, _district.OrganizationId, _school.RegistrationId, surveyId, "DistrictStart", _activeSurvey.IsDevelopment));
     }
 
     private void Problem((string Title, string Html) p) { _problemTitle = p.Title; _problemText = p.Html; }

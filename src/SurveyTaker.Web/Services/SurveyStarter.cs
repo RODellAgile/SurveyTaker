@@ -15,7 +15,8 @@ public sealed class SurveyStarter(
     IOptions<SeasonOptions> season,
     IOptions<SurveyOptions> options)
 {
-    public async Task<string> StartAsync(HttpContext http, int organizationId, int registrationId, int surveyId, string logPage)
+    /// <param name="isDevelopment">A Development survey (test organization only): the take is marked UseSurvey = 0.</param>
+    public async Task<string> StartAsync(HttpContext http, int organizationId, int registrationId, int surveyId, string logPage, bool isDevelopment = false)
     {
         var desc = await surveyBank.GetSurveyDescAsync(surveyId)
                    ?? throw new InvalidOperationException($"Survey {surveyId} not found in SurveyBank.");
@@ -31,6 +32,15 @@ public sealed class SurveyStarter(
             Ip: http.Connection.RemoteIpAddress?.ToString() ?? ""));
 
         await log.Info(logPage, "StartSurvey", "orgId/regId/surveyId", $"{organizationId}/{registrationId}/{surveyId}", $"TSI {tsi}");
+
+        if (isDevelopment)
+        {
+            // Test take of a Development survey: never counts. (Its results are also hidden while the survey is in
+            // Development, since the nightly summary skips archived surveys; this keeps them out after it goes Active.)
+            var marked = await speakup.MarkTestSurveyTakeAsync(tsi, organizationId);
+            if (marked != 1)
+                await log.Error(logPage, "MarkTestSurveyTake", "TSI/orgId", $"{tsi}/{organizationId}", "Development take not marked UseSurvey = 0");
+        }
 
         http.Response.Cookies.Append("ProjectTomorrowSurvey", tsi.ToString(), new CookieOptions
         {

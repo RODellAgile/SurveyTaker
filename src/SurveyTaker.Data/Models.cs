@@ -95,7 +95,14 @@ public sealed class SurveyInfo
 }
 
 /// <summary>Result of ChkSurveyId: present only when the survey exists and is not archived.</summary>
-public sealed record ActiveSurvey(string? Name, string? SurveyType);
+public sealed record ActiveSurvey(string? Name, string? SurveyType)
+{
+    /// <summary>A Development survey (SurveyBank surveys.Status = 'D'): only the test organization may take it; its takes don't count.</summary>
+    public bool IsDevelopment { get; init; }
+}
+
+/// <summary>A Development survey, for the test organization's picker.</summary>
+public sealed record DevelopmentSurvey(int SurveyId, string? Name, string? SurveyType);
 
 /// <summary>First result set of GetSurveyToTake: one row per question (grid rows are separate questions sharing QuesGrid).</summary>
 public sealed class SurveyQuestion

@@ -2,7 +2,7 @@
 @page "/S/{LinkCode}/{SurveyIdText}"
 @using System.Text.RegularExpressions
 @inject SpeakupDb Speakup
-@inject SurveyBankDb SurveyBank
+@inject SurveyAccess Access
 @inject OpenCheck Open
 @inject SurveyStarter Starter
 @inject SurveyLog Log
@@ -26,6 +26,7 @@ else if (_school is not null && _survey is not null)
             <dt class="col-sm-3">@T("School")</dt><dd class="col-sm-9">@_school.RegistrantName</dd>
             <dt class="col-sm-3">@T("Survey")</dt><dd class="col-sm-9 mb-0">@_survey.Name</dd>
         </dl>
+        @if (_survey.IsDevelopment) { <p class="alert alert-warning py-2 small">Development survey (testing): only the test organization can take it, and this take won't count in results.</p> }
         <form method="post" @formname="start" @onsubmit="StartAsync">
             <AntiforgeryToken />
             <button type="submit" class="btn btn-primary btn-lg">@T("Start")</button>
@@ -97,7 +98,7 @@ else if (_school is not null && _school.OrganizationId is int pickerOrg)
             return;
         }
 
-        if (!int.TryParse(SurveyIdText, out var surveyId) || (_survey = await SurveyBank.ChkSurveyIdAsync(surveyId)) is null)
+        if (!int.TryParse(SurveyIdText, out var surveyId) || (_survey = await Access.FindStartableAsync(surveyId, _school.OrganizationId ?? 0)) is null)
         {
             await Log.Error("SchoolStart", "ValidateSurveyId", "SurveyId", SurveyIdText, $"Survey not found or not active (link code {LinkCode})");
             Problem(ClosedMessages.SurveyNotAvailable());
@@ -113,7 +114,7 @@ else if (_school is not null && _school.OrganizationId is int pickerOrg)
     {
         if (_school is null || _survey is null || !int.TryParse(SurveyIdText, out var surveyId))
             return;
-        Nav.NavigateTo(await Starter.StartAsync(HttpContext, _school.OrganizationId ?? 0, _school.RegistrationId, surveyId, "SchoolStart"));
+        Nav.NavigateTo(await Starter.StartAsync(HttpContext, _school.OrganizationId ?? 0, _school.RegistrationId, surveyId, "SchoolStart", _survey.IsDevelopment));
     }
 
     private async Task LogEntryPoint(int? surveyId)
